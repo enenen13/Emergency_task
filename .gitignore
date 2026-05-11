@@ -13,6 +13,10 @@ env/
 
 # Generated diagrams / archives
 diagrams/
+graphviz_diagrams/
+graphviz_diagrams_test/
+transition_diagram/output/
+transition_diagram/graphviz_diagrams/
 diagrams.zip
 *.zip
 *.tar
@@ -21,4 +25,3 @@ diagrams.zip
 
 # Large document artifacts
 *.pdf
-
