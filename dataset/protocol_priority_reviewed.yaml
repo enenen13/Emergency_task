@@ -1,0 +1,2712 @@
+metadata:
+  name: 119番通報 緊急度判定プロトコル Ver.3 - protocol.yaml
+  version: validated_v0.2
+  created_from: /mnt/data/119_tuhou.pdf
+  created_note: PDF由来の分岐データを、実装時に参照先が解決できるように接続補完・ID一意化・検証情報を追加した版。医学的運用前には原本照合と専門家レビューが必須。
+  scope: 119番通報導入、共通バイタル、症候別21+1プロトコル（吐血・喀血を含む）
+  source_page_basis: PDF pages 35-75 (document page numbers in footer), plus explanatory pages 1-7 for label definitions and
+    algorithm.
+labels:
+  R1:
+    category: 赤
+    description: 心肺蘇生の必要性が強く疑われる病態
+    mednlp_call_mapping: Very urgent
+  R2:
+    category: 赤
+    description: 高度な医学的判断・処置の必要性が高く、その開始までの時間に急を要する病態
+    mednlp_call_mapping: Very urgent
+  R3:
+    category: 赤
+    description: R2より低いが、迅速な到着と搬送が必要、または状況不明で確認を要する病態
+    mednlp_call_mapping: Very urgent
+  Y1:
+    category: 黄
+    description: 医学的判断の必要性は高いが、R2/R3ほどの迅速性は必要ない病態
+    mednlp_call_mapping: Semi-urgent
+  Y2:
+    category: 黄
+    description: 医学的判断の必要性はR1〜Y1ほど高くないが医療機関受診が必要な病態
+    mednlp_call_mapping: Semi-urgent
+  G:
+    category: 緑
+    description: 赤、黄には該当しないが診察が必要な病態
+    mednlp_call_mapping: Low urgency
+oral_instructions:
+  CPR: 心肺蘇生指導
+  airway_obstruction: 気道異物除去指導
+  hemostasis: 止血の口頭指導
+  finger_toe_amputation: 指趾切断の口頭指導
+  poisoning: 中毒の口頭指導
+  positioning: 体位管理の口頭指導
+global_priority_rules:
+- id: cpa_keywords
+  priority: 100
+  match_any:
+  - 呼吸なし
+  - 脈なし
+  - 水没
+  - 冷たくなっている
+  - 首をつった
+  - 首を絞めた
+  - 喉が詰まった
+  - 意識なし
+  triage: R1
+  oral_instruction:
+  - CPR
+  - airway_obstruction
+  source_pages:
+  - 5
+  - 35
+  - 75
+- id: convulsion_direct_route
+  priority: 90
+  match_any:
+  - けいれん
+  - 痙攣
+  - ひきつけ
+  route_to_protocol: convulsion
+  source_pages:
+  - 35
+  - 75
+entry_flow:
+- id: intro_fire_or_emergency
+  question: 火事ですか、救急ですか？
+  choices:
+  - code: a
+    value: emergency
+    text: 救急
+    next: dispatch_location
+  - code: b
+    value: fire_or_other
+    text: 火事、他
+    route_to: non_medical_flow
+  source_pages:
+  - 35
+- id: dispatch_location
+  question: 救急車が出動する先の住所、電話番号の確認
+  metadata_only: true
+  source_pages:
+  - 35
+  next: overview
+- id: overview
+  question: どなたが、どうしましたか？
+  extract:
+  - chief_complaint
+  - cpa_keywords
+  - trauma_or_external_cause
+  - convulsion
+  - unknown
+  source_pages:
+  - 35
+  next: injured_count
+- id: injured_count
+  question: 怪我をしたのは（病気なのは）何人ですか？
+  source_pages:
+  - 35
+  next: caller_relation
+- id: caller_relation
+  question: 通報しているあなたは、どなた（家族の方、警察官の方）ですか？
+  source_pages:
+  - 35
+  next: age
+- id: age
+  question: 年齢は、いくつぐらいですか？
+  choices:
+  - code: a
+    text: 4歳以下、5-14歳、15-39歳、40-69歳、70歳以上、85歳以上
+    next: sex
+  - code: b
+    text: 不明
+    next: sex
+  source_pages:
+  - 35
+- id: sex
+  question: 患者は、男性（男の子）ですか、女性（女の子）ですか？
+  choices:
+  - code: a
+    text: 男
+    next: observation
+  - code: b
+    text: 女
+    next: observation
+  - code: c
+    text: 不明
+    next: observation
+  source_pages:
+  - 35
+- id: observation
+  question: 今、直接、患者をみることができますか？（目の前にいますか？など）
+  choices:
+  - code: a
+    text: 容態を観察している・観察した
+    next: common_breathing
+  - code: b
+    text: 容態を観察していないし、観察できない
+    triage: R3
+  source_pages:
+  - 35
+common_vitals:
+- id: common_breathing
+  source_pages:
+  - 35
+  - 36
+  - 37
+  - 38
+  - 40
+  - 46
+  - 48
+  - 50
+  - 53
+  - 55
+  - 57
+  - 59
+  - 62
+  - 63
+  - 65
+  - 67
+  - 68
+  - 69
+  - 71
+  - 73
+  question: 呼吸は楽にしていますか？普段通りの呼吸ですか？
+  slot: breathing_status
+  choices:
+  - code: a
+    value: normal
+    text: はい
+    action: next
+    next: common_cold_sweat
+  - code: b
+    value: no_breathing
+    text: いいえ（呼吸なし）
+    triage: R1
+    oral_instruction:
+    - CPR
+  - code: c
+    value: agonal_breathing
+    text: いいえ（死戦期呼吸を疑う）
+    triage: R1
+    oral_instruction:
+    - CPR
+  - code: d
+    value: snoring
+    text: いいえ（いびき）
+    triage: R2
+  - code: e
+    value: choking
+    text: いいえ（窒息）
+    triage: R1
+    oral_instruction:
+    - airway_obstruction
+  - code: f
+    value: dyspnea
+    text: 呼吸が苦しそう
+    triage: R2
+  - code: g
+    value: unknown
+    text: 不明
+    triage: R3
+- id: common_cold_sweat
+  question: 冷や汗をかいていますか？
+  slot: cold_sweat
+  choices:
+  - code: a
+    value: 'yes'
+    text: はい
+    triage: R2
+  - code: b
+    value: 'no'
+    text: いいえ
+    action: next
+    next: common_face_color
+  - code: c
+    value: unknown
+    text: 不明
+    triage: R3
+- id: common_face_color
+  question: 顔色は悪いですか？
+  slot: face_color
+  choices:
+  - code: a
+    value: bad
+    text: 悪い
+    triage: R2
+  - code: b
+    value: normal
+    text: 悪くない（いつもと同じ、赤色）
+    action: next
+    next: common_conversation
+  - code: c
+    value: unknown
+    text: 不明
+    triage: R3
+- id: common_conversation
+  question: 普通に話しができますか？
+  slot: conversation_status
+  choices:
+  - code: a
+    value: normal
+    text: はい
+    action: next
+    next: chief_complaint_router
+  - code: b
+    value: confused
+    text: いいえ（つじつまが合わない）
+    triage: R2
+  - code: c
+    value: words_only
+    text: いいえ（単語しか話せない）
+    triage: R2
+  - code: d
+    value: groaning
+    text: いいえ（うめき声のみ）
+    triage: R2
+  - code: e
+    value: no_voice
+    text: いいえ（声が全く出ない）
+    triage: R2
+  - code: f
+    value: unclear_content
+    text: いいえ（内容不明）
+    triage: R2
+  - code: g
+    value: dyspnea_conversation_difficult
+    text: いいえ（意識は問題がないが、呼吸苦で話しができない）途切れ途切れの会話
+    triage: R2
+  - code: i
+    value: unknown
+    text: 不明
+    triage: R3
+chief_complaint_router:
+  id: chief_complaint_router
+  source_pages:
+  - 5
+  - 6
+  - 35
+  - 75
+  routes:
+  - protocol: dyspnea
+    match_any:
+    - 息が苦しい
+    - 呼吸が苦しい
+    - 息苦しい
+    - ゼーゼー
+    - ヒューヒュー
+    - 喘息
+  - protocol: palpitation
+    match_any:
+    - 動悸
+    - どきどきする
+    - 胸がどきどきする
+  - protocol: consciousness_disorder_syncope
+    match_any:
+    - 反応がない
+    - 意識がない
+    - 失神
+    - 倒れた
+    - 変なことを言う
+  - protocol: convulsion
+    match_any:
+    - けいれん
+    - 痙攣
+    - ひきつけ
+  - protocol: headache
+    match_any:
+    - 頭痛
+    - 頭が痛い
+    - 後頭部が痛い
+  - protocol: chest_pain_nontraumatic
+    match_any:
+    - 胸が痛い
+    - 胸が苦しい
+    - 胸痛
+  - protocol: back_pain
+    match_any:
+    - 背中が痛い
+    - 背骨が痛い
+    - 背部痛
+  - protocol: adult_fever
+    age_condition: age >= 16
+    match_any:
+    - 熱
+    - 発熱
+    - 熱が高い
+  - protocol: abdominal_pain
+    match_any:
+    - おなかが痛い
+    - 腹痛
+    - みぞおちが痛い
+    - 下腹が痛い
+  - protocol: adult_nausea_vomiting
+    age_condition: age >= 16
+    match_any:
+    - 吐いた
+    - 吐き気
+    - 嘔吐
+  - protocol: dizziness
+    match_any:
+    - めまい
+    - 目が回る
+  - protocol: numbness
+    match_any:
+    - しびれ
+    - 麻痺
+    - 手足に力が入らない
+    - 脳卒中
+  - protocol: lumbar_pain
+    match_any:
+    - 腰が痛い
+    - 腰痛
+  - protocol: hematemesis_hemoptysis
+    match_any:
+    - 吐血
+    - 喀血
+    - 血を吐いた
+  - protocol: melena_hematochezia
+    match_any:
+    - 下血
+    - 血便
+    - 便に血
+  - protocol: malaise
+    match_any:
+    - 具合が悪い
+    - 気分が悪い
+    - 具合が悪そう
+    - 気分が悪そう
+  - protocol: trauma
+    match_any:
+    - けが
+    - 怪我
+    - 外傷
+    - 交通事故
+    - 転落
+    - やけど
+  - protocol: foreign_body_ingestion
+    match_any:
+    - 固形物
+    - 飲み込んだ
+    - 喉につかえた
+    - 喉に引っかかった
+  - protocol: poisoning
+    match_any:
+    - 中毒
+    - 薬を飲んだ
+    - ガスを吸った
+    - 間違って飲んだ
+  - protocol: pediatric_fever
+    age_condition: age < 16
+    match_any:
+    - 熱
+    - 発熱
+    - 熱が高い
+  - protocol: pediatric_nausea_vomiting
+    age_condition: age < 16
+    match_any:
+    - 吐いた
+    - 吐き気
+    - 嘔吐
+  - protocol: pediatric_head_neck_trauma
+    age_condition: age < 16
+    match_any:
+    - 頭をぶつけた
+    - 頭から血
+    - 頭部外傷
+    - 頸部外傷
+protocols:
+- id: dyspnea
+  name: 呼吸困難
+  source_pages:
+  - 37
+  symptom_examples:
+  - 息が苦しい
+  - 呼吸が苦しい
+  - 息苦しい
+  - 肩で息をしている
+  - 息ができない
+  - ゼーゼーいっている
+  - ヒューヒューいっている
+  - 喘息なんですが
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: dyspnea_terminal
+    question: 上記、呼吸・循環・意識に異常がない呼吸困難
+    triage: R2
+  - id: dyspnea_info_asthma
+    question: 喘息の持病はありますか？
+    metadata_only: true
+  - id: dyspnea_info_inhaler
+    question: 吸入薬を持っていますか？使用しましたか？
+    metadata_only: true
+  - id: dyspnea_info_homecare
+    question: 在宅医療機器や、かかりつけ医からの特別な指示はありますか？それを行いましたか？
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: R2
+  notes: 呼吸困難は共通バイタルで異常なしでもR2。☎項目は搬送先共有情報で緊急度には影響しない。
+- id: palpitation
+  name: 動悸
+  source_pages:
+  - 38
+  - 39
+  symptom_examples:
+  - どきどきする
+  - 胸がどきどきする
+  - 動悸がする
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: palpitation_heart_history
+    question: これまで心臓の異常を指摘されたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: palpitation_icd_fired
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 心疾患
+    source_pages:
+    - 39
+  - id: palpitation_icd_fired
+    question: 30分以内に体内式埋め込み型除細動器は、発動しましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: palpitation_chest_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 体内式埋め込み型除細動器の発動
+    source_pages:
+    - 39
+  - id: palpitation_chest_pain
+    question: 胸痛はありますか？
+    choices:
+    - code: a-i
+      value: yes_age_40_or_more
+      text: はい・40歳以上
+      triage: R2
+    - code: a-ii
+      value: yes_age_under_40
+      text: はい・40歳未満
+      triage: Y2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: palpitation_medication_info
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 急性冠症候群
+  - id: palpitation_medication_info
+    question: 12時間以内に、何か薬を使用しましたか？（治療薬や市販薬の薬品名）
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: consciousness_disorder_syncope
+  name: 意識障害／失神
+  source_pages:
+  - 40
+  - 41
+  symptom_examples:
+  - 反応がない
+  - 意識がないようだ
+  - 変なことを言う
+  - うわごとを言っている
+  - いつもと様子が違う
+  - 気を失った
+  - 気を失いかけた
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: syncope_breath_count
+    question: 呼吸停止の可能性が否定できない場合、呼吸をする度に合図してください。
+    choices:
+    - code: a
+      value: interval_10sec_or_more
+      text: 10秒以上（死戦期呼吸）
+      triage: R1
+      oral_instruction:
+      - CPR
+    - code: b
+      value: under_10sec
+      text: 10秒未満
+      action: next
+      next: syncope_heart_history
+    - code: c
+      value: unable
+      text: 実施できず
+      triage: R3
+    suspected_condition: 心停止
+  - id: syncope_heart_history
+    question: これまで心臓の異常を指摘されたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: syncope_abdominal_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 心疾患・不整脈
+  - id: syncope_abdominal_pain
+    question: お腹を痛がっていますか（したか）？
+    choices:
+    - code: a
+      value: yes_age_40_or_more
+      text: はい・40歳以上
+      triage: R2
+    - code: a2
+      value: yes_age_under_40
+      text: はい・40歳未満
+      triage: Y2
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: Y2
+    suspected_condition: 子宮外妊娠・腹部大動脈切迫破裂
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: convulsion
+  name: けいれん
+  source_pages:
+  - 42
+  - 43
+  symptom_examples:
+  - ひきつけ
+  - てんかん
+  - がたがた震えている
+  - 泡を吹いている
+  - 白目をむいている
+  - けいれんを起こしている
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: convulsion_scope
+    question: 痙攣しているのは全身ですか。それとも、体の一部ですか。
+    choices:
+    - code: a
+      value: generalized
+      text: 全身性
+      next: convulsion_continues
+    - code: b
+      value: focal
+      text: 局所性
+      next: convulsion_focal_common
+  - id: convulsion_focal_common
+    question: 局所性けいれんの場合は共通バイタルを確認し、その後、症候別インタビューへ戻る。
+    synthetic_node: true
+    reason: 原本フローチャートでは「一部（局所）」からバイタルサインのインタビューへ接続しているが、抽出YAMLでは接続先ノードが未定義だったため補完。
+    run_common_vitals: true
+    resume_next: convulsion_pregnant
+    source_pages:
+    - 12
+    - 13
+    - 42
+    - 43
+  - id: convulsion_continues
+    question: けいれんは続いていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: convulsion_breath_signal
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: convulsion_breath_signal
+    question: 全身性でけいれん停止中：呼吸をする度に合図してください。
+    choices:
+    - code: a
+      value: interval_10sec_or_more
+      text: 10秒以上（死戦期呼吸）
+      triage: R2
+    - code: b
+      value: under_10sec
+      text: 10秒未満
+      triage: Y1
+    - code: c
+      value: unable
+      text: 実施できず
+      triage: R3
+  - id: convulsion_pregnant
+    question: 女性で12～50才の場合、妊娠していますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: convulsion_diabetes
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 子癇
+  - id: convulsion_diabetes
+    question: 糖尿病と言われたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: convulsion_history
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 低血糖・高血糖
+  - id: convulsion_history
+    question: これまで、痙攣やてんかんを起こしたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: convulsion_predicted
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: てんかん
+  - id: convulsion_predicted
+    question: まだ痙攣が起きていないが、今後起きる感じがするのですね？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y2
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: Y2
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: headache
+  name: 頭痛
+  source_pages:
+  - 44
+  - 45
+  symptom_examples:
+  - 頭が痛い
+  - 後頭部が痛い
+  - 頭痛がすると言って倒れた
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: headache_sudden_severe
+    question: 激しい痛みが、突然起こりましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: headache_numbness_paralysis
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: くも膜下出血
+  - id: headache_numbness_paralysis
+    question: しびれや麻痺がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: headache_abnormal_behavior
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳梗塞
+  - id: headache_abnormal_behavior
+    question: 何か、いつもと違う振る舞いがありますか？（発症から3時間以内）
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: headache_onset_info
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: headache_onset_info
+    question: 痛みはいつ始まりましたか？（できるだけ正確に）
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: chest_pain_nontraumatic
+  name: 胸痛（非外傷性）
+  source_pages:
+  - 46
+  - 47
+  symptom_examples:
+  - 胸が痛い
+  - 胸が苦しい
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: chest_nausea_vomiting
+    question: 吐いたり、吐き気がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: chest_mi_angina_history
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 急性冠症候群
+  - id: chest_mi_angina_history
+    question: これまで、心筋梗塞や狭心症と言われたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: chest_recurrent_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 急性冠症候群
+  - id: chest_recurrent_pain
+    question: これまで、同様の痛みが何度かありましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: chest_age_40
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: chest_age_40
+    question: 40歳以上ですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: Y2
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 心疾患
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: back_pain
+  name: 背部痛
+  source_pages:
+  - 48
+  - 49
+  symptom_examples:
+  - 背中が痛い
+  - 背骨が痛い
+  - 腰がいたい
+  - 腰痛がひどい
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: back_trauma
+    question: 体をぶつけたり、高いところから落ちたりしましたか？
+    choices:
+    - code: a
+      value: traumatic
+      text: 外傷性
+      route_to_protocol: trauma
+    - code: b
+      value: nontraumatic
+      text: 非外傷性
+      action: next
+      next: back_dyspnea_recheck
+  - id: back_dyspnea_recheck
+    question: 再度確認しますが、息苦しくないですか？、呼吸が苦しそうですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      route_to_protocol: dyspnea
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: back_chest_pain_40
+  - id: back_chest_pain_40
+    question: 40才以上：胸は痛くないですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      route_to_protocol: chest_pain_nontraumatic
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: back_aortic_aneurysm_history
+    suspected_condition: 心疾患
+  - id: back_aortic_aneurysm_history
+    question: これまでに大動脈瘤などを指摘されたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: back_presyncope_65
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 胸部大動脈瘤切迫破裂
+  - id: back_presyncope_65
+    question: 65才以上：気を失いそうになりましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: back_pain_quality_65
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: back_pain_quality_65
+    question: 65才以上：どのような痛みか教えてください
+    choices:
+    - code: a
+      value: tearing
+      text: さけるような痛み
+      triage: R2
+    - code: b
+      value: migrating
+      text: 移動する痛み
+      triage: R2
+    - code: c
+      value: other
+      text: その他の痛み
+      triage: G
+    suspected_condition: 急性大動脈解離
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: lumbar_pain
+  name: 腰部痛
+  source_pages:
+  - 59
+  - 60
+  symptom_examples:
+  - 背中が痛い
+  - 背骨が痛い
+  - 腰がいたい
+  - 腰痛がひどい
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: lumbar_trauma
+    question: 体をぶつけたり、高いところから落ちたりしましたか？
+    choices:
+    - code: a
+      value: traumatic
+      text: 外傷性
+      route_to_protocol: trauma
+    - code: b
+      value: nontraumatic
+      text: 非外傷性
+      action: next
+      next: lumbar_dyspnea_recheck
+  - id: lumbar_dyspnea_recheck
+    question: 再度確認しますが、息苦しくないですか？、呼吸が苦しそうですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      route_to_protocol: dyspnea
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: lumbar_chest_pain_40
+  - id: lumbar_chest_pain_40
+    question: 40才以上：胸は痛くないですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      route_to_protocol: chest_pain_nontraumatic
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: lumbar_aortic_aneurysm_history
+    suspected_condition: 心疾患
+  - id: lumbar_aortic_aneurysm_history
+    question: これまでに大動脈瘤などを指摘されたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: lumbar_presyncope_65
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 胸部大動脈瘤切迫破裂
+  - id: lumbar_presyncope_65
+    question: 65才以上：気を失いそうになりましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: R2
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: lumbar_pain_quality_65
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: lumbar_pain_quality_65
+    question: 65才以上：どのような痛みか教えてください
+    choices:
+    - code: a
+      value: tearing
+      text: さけるような痛み
+      triage: R2
+    - code: b
+      value: migrating
+      text: 移動する痛み
+      triage: R2
+    - code: c
+      value: other
+      text: その他の痛み
+      triage: G
+    suspected_condition: 急性大動脈解離
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: adult_fever
+  name: 成人の発熱（16歳以上）
+  source_pages:
+  - 50
+  symptom_examples:
+  - 〇〇度の熱がでた
+  - 熱が高い
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: adult_fever_cannot_situp
+    question: 起き上がることができませんか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_fever_headache_vomit
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: adult_fever_headache_vomit
+    question: 強い頭痛と嘔吐がともにありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_fever_heat_exposure
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 髄膜炎
+  - id: adult_fever_heat_exposure
+    question: 暑い所にしばらくいましたか？または、激しい運動をした後ですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_fever_headache_consciousness
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 熱中症
+  - id: adult_fever_headache_consciousness
+    question: 頭痛があり、意識がもうろうとしていますか？または、意識状態が悪いですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: G
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+- id: abdominal_pain
+  name: 腹痛
+  source_pages:
+  - 51
+  - 52
+  symptom_examples:
+  - おなかが痛い
+  - みぞおちが痛い
+  - 下腹が痛い
+  - わき腹が痛い
+  - おなかが張る
+  - 足の付け根が痛い
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: abd_aortic_aneurysm_history
+    question: これまでに大動脈瘤などを指摘されたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: abd_presyncope_risk_age
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 腹部大動脈瘤切迫破裂
+  - id: abd_presyncope_risk_age
+    question: 女性12歳以上または男性65歳以上：気を失いそうになりましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: abd_above_navel
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 子宮外妊娠・腹部大動脈瘤切迫破裂
+  - id: abd_above_navel
+    question: 臍より上の痛みですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: abd_pain_quality_65
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 心疾患
+  - id: abd_pain_quality_65
+    question: 65才以上：どのような痛みか教えてください
+    choices:
+    - code: a
+      value: tearing
+      text: さけるような痛み
+      triage: Y1
+    - code: b
+      value: migrating
+      text: 移動する痛み
+      triage: Y1
+    - code: c
+      value: other
+      text: その他の痛み
+      triage: G
+    suspected_condition: 腹部大動脈瘤切迫破裂
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: adult_nausea_vomiting
+  name: 成人の嘔気・嘔吐（16歳以上）
+  source_pages:
+  - 53
+  - 54
+  symptom_examples:
+  - 吐いた
+  - 吐き気が強い
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: adult_vomit_blood
+    question: 吐いたものに血は混じっていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_vomit_2days
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: adult_vomit_2days
+    question: 強い吐き気、または嘔吐が2日以上続いていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_vomit_strong_abdominal_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: adult_vomit_strong_abdominal_pain
+    question: 強いお腹の痛みがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_vomit_abdominal_distension
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: adult_vomit_abdominal_distension
+    question: お腹がパンパンに張っていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_vomit_chest_back_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 腸閉塞
+  - id: adult_vomit_chest_back_pain
+    question: 胸、または背中の痛みはありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_vomit_recent_trauma
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 大動脈疾患・心疾患
+  - id: adult_vomit_recent_trauma
+    question: ごく最近、頭・胸・腹に怪我をしたり、大きな力を受けたりしましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: adult_vomit_strong_headache
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: adult_vomit_strong_headache
+    question: 強い頭痛は伴っていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: G
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 頭蓋内圧亢進
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+- id: dizziness
+  name: めまい
+  source_pages:
+  - 55
+  - 56
+  symptom_examples:
+  - めまいがする
+  - 目が回る
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: dizzy_cannot_move
+    question: 動けませんか？または、歩行や移動ができませんか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_weakness
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: dizzy_weakness
+    question: 急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_diarrhea_vomiting
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳卒中
+  - id: dizzy_diarrhea_vomiting
+    question: 下痢または嘔吐をしていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_nausea
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脱水
+  - id: dizzy_nausea
+    question: 吐き気がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_speech_difficulty
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: dizzy_speech_difficulty
+    question: しゃべりにくいですか？または、しゃべりにくそうですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_hypertension
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳卒中
+  - id: dizzy_hypertension
+    question: 高血圧の治療中ですか？または、高血圧と言われたことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_visual_disturbance
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: dizzy_visual_disturbance
+    question: 目が見えにくいですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_arrhythmia
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳卒中
+  - id: dizzy_arrhythmia
+    question: 脈が極端に速かったり遅かったり、乱れたり、ドキドキしますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_chest_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 不整脈
+  - id: dizzy_chest_pain
+    question: 胸の痛みがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_severe
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 急性冠症候群
+  - id: dizzy_severe
+    question: めまいの症状はひどいですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: dizzy_headache
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: dizzy_headache
+    question: 頭痛がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: G
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+- id: numbness
+  name: しびれ
+  source_pages:
+  - 57
+  - 58
+  symptom_examples:
+  - 手足がしびれている
+  - 脳卒中のようだ
+  - 突然、話しができなくなった
+  - 突然、片方の手（足）が動かなくなった
+  - 突然、バランスがとれなくなった
+  - 突然、目が見えなくなった
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: numbness_stroke_symptoms
+    question: 脳卒中の症状がまだ聴取されていない場合、以下の症状がありますか？
+    choices:
+    - code: a
+      value: acute_dysarthria
+      text: 急な構音障害
+      triage: Y1
+    - code: b
+      value: acute_unilateral_weakness_numbness
+      text: 急な脱力または、しびれ（片側のみ）
+      triage: Y1
+    - code: c
+      value: acute_unilateral_paralysis_face_asymmetry
+      text: 急な麻痺または、顔面の左右差（片側のみ）
+      triage: Y1
+    - code: d
+      value: acute_balance_loss
+      text: 急なバランス感覚の欠如
+      triage: Y1
+    - code: e
+      value: acute_visual_disturbance
+      text: 急な視覚障害
+      triage: Y1
+    - code: f
+      value: sudden_headache
+      text: 突然の頭痛
+      triage: Y1
+    - code: g
+      value: other
+      text: その他
+      triage: G
+    suspected_condition: 脳卒中
+  - id: numbness_stroke_history
+    question: いままでに脳卒中になったことがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: numbness_onset_info
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+  - id: numbness_onset_info
+    question: これらの症状はいつからですか？（いつ始まりましたか？）
+    metadata_only: true
+    choices:
+    - code: a
+      text: 1時間以内
+      affects_triage: false
+      terminal_info_only: true
+    - code: b
+      text: 2時間以内
+      affects_triage: false
+      terminal_info_only: true
+    - code: c
+      text: 3時間以内
+      affects_triage: false
+      terminal_info_only: true
+    - code: d
+      text: 6時間以内
+      affects_triage: false
+      terminal_info_only: true
+    - code: e
+      text: 12時間以内
+      affects_triage: false
+      terminal_info_only: true
+    - code: f
+      text: 24時間以内
+      affects_triage: false
+      terminal_info_only: true
+    - code: g
+      text: それ以上
+      affects_triage: false
+      terminal_info_only: true
+    - code: h
+      text: 不明
+      affects_triage: false
+      terminal_info_only: true
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+- id: hematemesis_hemoptysis
+  name: 吐血・喀血
+  source_pages:
+  - 61
+  symptom_examples:
+  - 吐血した
+  - 喀血した
+  - 血を吐いた
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: hematemesis_amount
+    question: どれくらい出血していますか？
+    choices:
+    - code: a
+      value: small
+      text: 容器・ティッシュペーパーに血液が付着する程度
+      action: next
+      next: hematemesis_chest_or_abdominal_pain
+    - code: b
+      value: more_than_small
+      text: 上記以上に出血している
+      triage: Y1
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 大量出血
+  - id: hematemesis_chest_or_abdominal_pain
+    question: 胸痛あるいは腹痛はありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: hematemesis_history_info
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 胸腹痛関連疾患
+  - id: hematemesis_history_info
+    question: 呼吸器疾患、消化器疾患、大動脈疾患の既往はありますか？
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: melena_hematochezia
+  name: 下血・血便
+  source_pages:
+  - 62
+  symptom_examples:
+  - 下血した
+  - 便に血が混じっている
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: melena_amount
+    question: どれくらい出血していますか？
+    choices:
+    - code: a
+      value: small
+      text: 容器（ティッシュペーパー）に血液が付着する程度
+      action: next
+      next: melena_abdominal_pain
+    - code: b
+      value: more_than_small
+      text: 上記以上に出血している
+      triage: Y1
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 大量出血
+  - id: melena_abdominal_pain
+    question: 腹痛はありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: melena_history_info
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 腹痛関連疾患
+  - id: melena_history_info
+    question: 消化器疾患、大動脈疾患の既往はありますか？
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+  notes: 腹痛なく下着に血液が付着する程度の場合はY2。
+- id: malaise
+  name: 具合が悪い・気分が悪い
+  source_pages:
+  - 63
+  - 64
+  symptom_examples:
+  - 具合が悪そう
+  - 気分が悪そう
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: malaise_pain_location_router
+    question: どこか痛いところがありますか？それはどこですか？
+    choices:
+    - code: a
+      value: head
+      text: 頭
+      route_to_protocol: headache
+    - code: b
+      value: chest
+      text: 胸
+      route_to_protocol: chest_pain_nontraumatic
+    - code: c
+      value: back
+      text: 背部痛
+      route_to_protocol: back_pain
+    - code: d
+      value: abdomen
+      text: 腹痛
+      route_to_protocol: abdominal_pain
+    - code: e
+      value: lumbar
+      text: 腰部痛
+      route_to_protocol: lumbar_pain
+    - code: f
+      value: unknown
+      text: 不明
+      triage: R3
+    - code: g
+      value: 'no'
+      text: いいえ
+      action: next
+      next: malaise_weakness
+  - id: malaise_weakness
+    question: 急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: malaise_speech
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳卒中
+  - id: malaise_speech
+    question: しゃべりにくいですか？または、しゃべりにくそうですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: malaise_diarrhea_vomiting
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳卒中
+  - id: malaise_diarrhea_vomiting
+    question: 下痢または嘔吐をしていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: Y2
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脱水
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: Y2
+- id: trauma
+  name: 外傷
+  source_pages:
+  - 65
+  - 66
+  symptom_examples:
+  - 車にはねられた
+  - 高いところから落ちた
+  - けがをした
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: trauma_bleeding
+    question: どこからか出血していますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      oral_instruction:
+      - hemostasis
+      action: next
+      next: trauma_type
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: trauma_type
+    - code: unknown_synthetic
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本の外傷表には出血確認の不明行は明示されないが、プロトコル本文の「症候別インタビューで不明な場合はR3」に基づく補完。
+      source_pages:
+      - 6
+      - 65
+      - 66
+  - id: trauma_type
+    question: どんな外傷ですか？
+    choices:
+    - code: a
+      text: 3m以上の高さからの転落、墜落、滑落
+      triage: R2
+    - code: b
+      text: 自動車事故：車体横転、車外放出、車内閉じ込め、同乗者死亡、高速道路上の事故、転落など
+      triage: R2
+    - code: c
+      text: 高速での自動二輪車事故
+      triage: R2
+    - code: d
+      text: 歩行者・自転車・自動二輪者対自動車事故
+      triage: R2
+    - code: e
+      text: 鉄道車両との接触事故
+      triage: R2
+    - code: f
+      text: 頭頸部や体幹部の鋭的外傷（刺された、撃たれた）
+      triage: R2
+    - code: g
+      text: 四肢の切断および不全切断（手関節・足関節より近位）
+      triage: R2
+    - code: h
+      text: 救出に時間を要する（概ね20分以上）事故など
+      triage: R2
+    - code: i
+      text: 機械に巻き込まれた、挟まれた、重量物の下敷き、ぶつかった
+      triage: R2
+    - code: j
+      text: 爆発、列車・飛行機・バスなど多数傷病者の発生が予想される事故
+      triage: R2
+    - code: k
+      text: 上記以外で医師の現場派遣が望ましい事故
+      triage: R2
+    - code: l
+      text: 指趾切断
+      triage: R3
+      oral_instruction:
+      - finger_toe_amputation
+      value: finger_toe_amputation
+      source_text_note: 原本は「指趾切断の口頭指導およびR3」。
+    - code: m
+      text: 指趾の切創（切断を除く）
+      triage: G
+    - code: n
+      text: 手足の小範囲の熱傷
+      triage: G
+    - code: o
+      text: 手足の捻挫で、痛みが我慢できるもの
+      triage: G
+    - code: p
+      text: 手足の打撲・擦過傷で歩行が可能であるもの
+      triage: G
+    - code: q
+      text: 上記以外
+      triage: Y1
+    - code: unknown_synthetic
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 外傷種別が分類不能な場合の行が原本表に明示されないため、プロトコル本文の不明時R3ルールに基づく補完。
+      source_pages:
+      - 6
+      - 65
+      - 66
+  fallback:
+    if_any_unknown: R3
+  review_status: priority_reviewed
+  review_notes:
+  - 重点レビュー：外傷の出血確認と外傷種別は原本上、不明行が明示されていないが、本文の「症候別インタビューにおいても状況が不明な場合はR3」に基づき、実装用に不明→R3を補完。
+- id: foreign_body_ingestion
+  name: 固形物誤飲
+  source_pages:
+  - 67
+  symptom_examples:
+  - 何か固形物を飲み込んだ
+  - 食べ物などが喉につかえた
+  - 喉に引っかかっている
+  - 取れない
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: foreign_body_speak_cry
+    question: 再度確認しますが、話す（泣く）ことはできますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: G
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: R2
+    suspected_condition: 窒息
+  - id: foreign_body_object_info
+    question: 何を詰まらせましたか？
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+- id: poisoning
+  name: 中毒
+  source_pages:
+  - 68
+  symptom_examples:
+  - 薬を飲んだ
+  - ガスを吸った
+  - 間違って何かを飲んだ
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: poisoning_speak_cry
+    question: 再度確認しますが、話す（泣く）ことはできますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+      oral_instruction:
+      - poisoning
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: R2
+    suspected_condition: 窒息
+  - id: poisoning_info
+    question: 何を・いつ・どれくらい飲みましたか？
+    metadata_only: true
+  fallback:
+    if_any_unknown: R3
+- id: pediatric_fever
+  name: 小児の発熱（16歳未満）
+  source_pages:
+  - 69
+  - 70
+  symptom_examples:
+  - 〇〇度の熱がでた
+  - 熱が高い
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: ped_fever_consciousness
+    question: 意識がもうろうとしていますか？または、おかしなことを口走っていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_fever_drowsy
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳炎・髄膜炎
+  - id: ped_fever_drowsy
+    question: 1日中ウトウトしていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_fever_agitated
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳炎・髄膜炎
+  - id: ped_fever_agitated
+    question: 興奮していますか？または、あばれていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_fever_severe_headache
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳炎・髄膜炎
+  - id: ped_fever_severe_headache
+    question: ひどい頭痛がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: G
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+    suspected_condition: 脳炎・髄膜炎
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+- id: pediatric_nausea_vomiting
+  name: 小児の嘔気・嘔吐（16歳未満）
+  source_pages:
+  - 71
+  - 72
+  symptom_examples:
+  - 吐いた
+  - 吐き気が強い
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: ped_vomit_repeated
+    question: 嘔吐を何度も繰り返していますか？（目安：6回以上、または吐物中に食物残渣がみられなくなっても2〜3回以上）
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_blood_bile
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 髄膜炎・腸閉塞
+  - id: ped_vomit_blood_bile
+    question: 吐いたものに血または胆汁（緑がかった液体）が混じっていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_fever
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 消化性潰瘍
+  - id: ped_vomit_fever
+    question: 発熱（38.0℃以上）はありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_no_urine
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 髄膜炎
+  - id: ped_vomit_no_urine
+    question: 尿が半日以上でていませんか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_lethargic
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 脱水
+  - id: ped_vomit_lethargic
+    question: 無表情でウトウトしていますか？または、元気なくぐったりとしていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_infant_projectile
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 髄膜炎
+  - id: ped_vomit_infant_projectile
+    question: 乳児の場合：ミルク摂取後に、3〜4回以上噴出する嘔吐がみられましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_strong_abdominal_pain
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 幽門狭窄
+  - id: ped_vomit_strong_abdominal_pain
+    question: 強い腹痛がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_severe_headache
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 腸重積・腸炎
+  - id: ped_vomit_severe_headache
+    question: 頭を激しく痛がっていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_bloody_stool
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 髄膜炎
+  - id: ped_vomit_bloody_stool
+    question: 便に血液またはイチゴゼリー様のものが混じっていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_distension
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 腸重積
+  - id: ped_vomit_distension
+    question: お腹がパンパンに張っていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_no_tears
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 腸閉塞
+  - id: ped_vomit_no_tears
+    question: 泣いても涙がほとんど出ないですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_vomit_abdominal_trauma
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 脱水
+  - id: ped_vomit_abdominal_trauma
+    question: お腹を強く打ちましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: G
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 71
+      - 72
+    suspected_condition: 外傷
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+  review_status: priority_reviewed
+  review_notes:
+  - 重点レビュー：原本の質問1〜12の順序とY1/G/R3の落とし込みを確認。各質問の不明選択肢は原本の「不明な項目がある場合 R3」を実装しやすく展開したもの。
+- id: pediatric_head_neck_trauma
+  name: 小児の頭・頸部外傷（16歳未満）
+  source_pages:
+  - 73
+  - 74
+  symptom_examples:
+  - 頭をぶつけた
+  - 落ちた
+  - 頭から血が出た
+  inherits:
+  - common_vitals
+  start_after_common_vitals: true
+  nodes:
+  - id: ped_head_vomiting_repeated
+    question: 数回にわたる嘔吐がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_limb_weakness_numbness
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_limb_weakness_numbness
+    question: 手足で動きにくいところ、または、しびれがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_loss_of_consciousness
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_loss_of_consciousness
+    question: 受傷後または受傷時に意識消失がありましたか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_headache
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_headache
+    question: 意識はしっかりしており、頭痛を訴えていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_nosebleed
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_nosebleed
+    question: 押さえても、鼻血が止まらないですか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_ear_bleeding_without_direct_hit
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_ear_bleeding_without_direct_hit
+    question: 直接ぶつけていないのに耳出血がありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_bleeding_much
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_bleeding_much
+    question: 頭からの出血が多いですか（押さえても止まらないですか）？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_neck_posture
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_neck_posture
+    question: 首をかしげる姿勢をとっていますか？または、まっすぐ体を向かせても横を向いていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_csf_leak
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_csf_leak
+    question: サラサラした液体（髄液の可能性）が鼻または耳からポタポタと出ていますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_dizziness
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_dizziness
+    question: めまいがありますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      action: next
+      next: ped_head_visual_disturbance
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  - id: ped_head_visual_disturbance
+    question: 眼が見えにくかったり、ものが二重に見えたりしますか？
+    choices:
+    - code: a
+      value: 'yes'
+      text: はい
+      triage: Y1
+    - code: b
+      value: 'no'
+      text: いいえ
+      triage: G
+    - code: c
+      value: unknown
+      text: 不明
+      triage: R3
+      synthetic_choice: true
+      reason: 原本は各質問ごとではなく「不明な項目がある場合 R3」として総括しているため、実装用に各ノードへ展開。
+      source_pages:
+      - 73
+      - 74
+  fallback:
+    if_any_unknown: R3
+    if_all_symptom_questions_negative: G
+  review_status: priority_reviewed
+  review_notes:
+  - 重点レビュー：原本では質問順が「数回嘔吐→手足の動きにくさ/しびれ→意識消失→頭痛…」であるため、YAMLのノード順とnextを原本順に修正。
+implementation_notes:
+- 判定実装では global_priority_rules -> entry_flow -> common_vitals -> chief_complaint_router -> symptom protocol の順で評価する。
+- unknown/不明 は原則R3に倒す。ただしPDF上で別判定が明記された箇所は各nodeのchoicesを優先する。
+- metadata_only または ☎ の項目は、緊急度には影響しないが救急隊・医療機関への共有情報として保持する。
+- MedNLP-CALLの4値分類へ変換する場合は labels.*.mednlp_call_mapping を使う。R3をVery urgentに含めるのは迅速な現場確認が必要という119番プロトコル上の扱いに基づく暫定対応。
+validation:
+  status: graph_validated_with_review_flags
+  id_count: 146
+  unique_id_count: 146
+  duplicate_ids_after_fix: []
+  missing_references_after_fix: []
+  protocols_with_unreachable_nodes:
+  - protocol: dyspnea
+    unreachable_nodes:
+    - dyspnea_info_asthma
+    - dyspnea_info_homecare
+    - dyspnea_info_inhaler
+  - protocol: numbness
+    unreachable_nodes:
+    - numbness_onset_info
+    - numbness_stroke_history
+  - protocol: foreign_body_ingestion
+    unreachable_nodes:
+    - foreign_body_object_info
+  - protocol: poisoning
+    unreachable_nodes:
+    - poisoning_info
+  choices_without_transition_or_triage_after_fix: []
+  note: missing_references_after_fix が空であることを優先。unreachable は、終端判定後に聴取する参考情報ノード/抽出順の問題を含むため human_review_targets として扱う。
+  priority_review:
+    reviewed_protocols:
+    - trauma
+    - pediatric_nausea_vomiting
+    - pediatric_head_neck_trauma
+    changes:
+    - 'trauma_bleeding: 不明→R3 の合成選択肢を追加'
+    - 'trauma_type: 不明→R3 の合成選択肢を追加'
+    - 'pediatric_head_neck_trauma: 原本順にノード順・nextを修正'
+    undefined_references_after_review: 0
+    duplicate_node_ids_after_review: 0
+    choices_without_next_or_triage_after_review: 0
+    notes: 重点レビュー対象は外傷・小児の嘔気嘔吐・小児の頭頸部外傷。医療安全上、最終利用前に原本照合と専門家確認が必要。

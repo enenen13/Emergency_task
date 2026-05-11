@@ -1,0 +1,24 @@
+# OS files
+.DS_Store
+
+# Python caches / local environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Generated diagrams / archives
+diagrams/
+diagrams.zip
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Large document artifacts
+*.pdf
+
