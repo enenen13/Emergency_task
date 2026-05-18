@@ -23,9 +23,14 @@ from matplotlib import font_manager
 plt.switch_backend("Agg")
 
 JP_FONT_CANDIDATES = [
+    Path(r"C:\Windows\Fonts\YuGothM.ttc"),
+    Path(r"C:\Windows\Fonts\YuGothR.ttc"),
+    Path(r"C:\Windows\Fonts\meiryo.ttc"),
     Path("/System/Library/Fonts/Hiragino Sans GB.ttc"),
     Path("/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"),
     Path("/Library/Fonts/Arial Unicode.ttf"),
+    Path("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"),
+    Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"),
 ]
 
 

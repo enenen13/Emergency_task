@@ -1,0 +1,10 @@
+# Python: 3.11
+# Python dependencies for the transition diagram notebooks/scripts.
+# Graphviz itself is also required for the original diamond/parallelogram diagrams:
+#   scoop install graphviz
+
+graphviz==0.21
+ipykernel==7.2.0
+matplotlib==3.10.9
+networkx==3.6.1
+PyYAML==6.0.3
