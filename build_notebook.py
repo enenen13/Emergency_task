@@ -19,41 +19,83 @@ def cell(src, kind="code"):
 
 cells = []
 
-cells.append(cell(r"""# 頭痛BERT: 順次BERT vs 選択強化BERT
+cells.append(cell(r"""# 頭痛BERT: 順次BERT vs 選択強化BERT vs 直接BERT
 
 ## 概要
-頭痛プロトコル（`protocol.yaml` の `headache`）の遷移図に対して、2種類のBERTモデルを実装・比較する。
+頭痛プロトコル（`protocol.yaml` の `headache`）に対して、3種類のBERTモデルを実装・比較する。
 
 - **モデル1：全BERT（順次）**
   yaml の分岐ノード数だけ専用BERTを用意し、「**分岐 → 選択肢 → 次の分岐**」のサイクルに従って順次（greedy）に推論する。
   予測が「次へ進む」以外の場合はその時点で終端し、後続のBERTは呼ばない。
 
-- **モデル2：選択強化BERT（単一 MultipleChoice BERT）**
-  分岐質問・関連会話ペア・選択肢を入力に取る単一のBERTで、選択肢を予測する。
-  yaml の同じ「**分岐 → 選択肢**」サイクルに従って遷移図をたどる。
+- **モデル2：選択強化BERT（履歴持ちエージェント / 単一 MultipleChoice BERT）**
+  単一のBERTで、yaml の「**分岐 → 選択肢**」サイクルを **エージェント的に** たどる。
+  各ステップで BERT が見る state は次の3点セット:
+  1. `[これまでの確認]` 過去の (分岐質問 → 自分が選んだ回答) 履歴
+  2. `[現在の分岐]` 今居る分岐の質問
+  3. `[患者の発話]` cos類似度で選定された関連会話ペア
+
+  選択肢には「**→ 行き先**」が埋め込まれている（`はい → R2：くも膜下出血の疑い` / `いいえ → 次の確認: しびれや麻痺がありますか？` / `不明 → R3（保留）`）。
+  ReAct / policy 的に、状態を更新しながらエッジを選んで進む。
+
+- **モデル3：直接BERT（遷移図を使わない baseline）**
+  会話全体を1本の文脈として読み、**遷移図を一切経由せず**に最終 triage（R2/R3/Y2）を直接 3クラス分類する単一BERT。
+  遷移図ベース（モデル1・2）との比較対照。
 
 データ前処理（ラリー分割・Sentence-LUKE ベクトル化・cos類似度による採用ペア選定）と各BERTの学習方法は既存ノートブック (`BERTの入力文選定.ipynb` / `頭痛BERT学習.ipynb`) を踏襲する。""", "markdown"))
 
 cells.append(cell("# 1. データ準備", "markdown"))
 
-cells.append(cell("""# Colab で実行する場合のみ Drive をマウント（ローカル実行時は不要）
-# from google.colab import drive
-# drive.mount('/content/drive')"""))
+cells.append(cell("""# ============================================================
+# 環境判定 & セットアップ (Colab / ローカル どちらでも動く)
+# ============================================================
+import os, sys, subprocess
+
+IN_COLAB = 'google.colab' in sys.modules
+print(f'IN_COLAB = {IN_COLAB}')
+
+if IN_COLAB:
+    # ---- Colab: Drive をマウントし、不足パッケージを入れる ----
+    from google.colab import drive
+    drive.mount('/content/drive')
+
+    # Colab に最初から入ってない可能性があるもの。-q で静かに。
+    # transformers は 4.x にピン（5.x には MLukeTokenizer のバグあり）。
+    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q',
+                    'transformers==4.46.3', 'sentencepiece', 'fugashi',
+                    'ipadic', 'unidic-lite', 'protobuf', 'tiktoken',
+                    'pyyaml', 'graphviz', 'japanize-matplotlib'], check=True)
+
+    # 自分のDriveに合わせて変更。CSV と protocol.yaml をここに置いてください。
+    DATA_DIR = '/content/drive/MyDrive/NTCIR-19'
+    CSV_PATH = f'{DATA_DIR}/headache_emergency_calls202605311132.csv'
+    YAML_PATH = f'{DATA_DIR}/protocol.yaml'
+else:
+    # ---- ローカル ----
+    BASE_DIR = 'C:/Users/hiyok/Desktop/Emergency_task'
+    CSV_PATH = f'{BASE_DIR}/dataset/headache_emergency_calls202605311132.csv'
+    YAML_PATH = f'{BASE_DIR}/transition_diagram/protocol.yaml'
+
+print(f'CSV : {CSV_PATH}  (exists: {os.path.exists(CSV_PATH)})')
+print(f'YAML: {YAML_PATH}  (exists: {os.path.exists(YAML_PATH)})')
+
+# GPU 状態を確認
+try:
+    import torch
+    print(f'CUDA available: {torch.cuda.is_available()}')
+    if torch.cuda.is_available():
+        print(f'  device: {torch.cuda.get_device_name(0)}')
+except ImportError:
+    pass"""))
 
 cells.append(cell("""import pandas as pd
-# パス区切りはスラッシュ推奨（Windows のバックスラッシュは Python の文字列エスケープと衝突する）
-df_all = pd.read_csv(
-    'C:/Users/hiyok/Desktop/Emergency_task/dataset/headache_emergency_calls202605311132.csv'
-)
-# 痛みの各値（0/1/2）から偏らないように 4件ずつ取り、最初の10件を採用する。
-# （単に先頭10件を取ると痛み=0 のみに偏り、後段の BERT 学習で各分岐のラベルが
-#  単一クラスになり stratified split が失敗するため）
-_parts = []
-for _v in [0, 1, 2]:
-    _sub = df_all[df_all['痛み'] == _v].drop_duplicates(['しびれ', '振る舞い', 'トリアージ'])
-    _parts.append(_sub.head(4))
-df = pd.concat(_parts).head(10).reset_index(drop=True)
-df"""))
+# 全件（162行）を学習に使う。CPU だと数十分〜時間かかるので、検証目的なら .head(N) で絞ること。
+df = pd.read_csv(CSV_PATH)
+print(f'rows: {len(df)}')
+print('label分布:')
+for col in ['痛み', 'しびれ', '振る舞い', 'トリアージ']:
+    print(f'  {col}: {dict(df[col].value_counts().sort_index())}')
+df.head()"""))
 
 cells.append(cell("## 1.1. 会話をラリーごとに分割し、質問と回答のペアを作成", "markdown"))
 
@@ -93,10 +135,9 @@ cells.append(cell(r"""## 1.2. protocol.yaml から頭痛プロトコルの分岐
 - **BERTの数**（モデル1） = headache プロトコルの分岐ノード数
 - **分岐→選択肢のサイクル**（両モデル共通） = 各分岐ノードの選択肢と次ノード/triage""", "markdown"))
 
-cells.append(cell(r"""# %pip install pyyaml  # 実行した場合は Restart Kernel してから次のセルへ
-import yaml
+cells.append(cell(r"""import yaml
 
-with open('C:/Users/hiyok/Desktop/Emergency_task/transition_diagram/protocol.yaml', encoding='utf-8') as f:
+with open(YAML_PATH, encoding='utf-8') as f:
     protocol = yaml.safe_load(f)
 
 # headache プロトコルを抽出
@@ -136,6 +177,7 @@ for n in branch_nodes:
     branch_table.append({
         'id': n['id'],
         'question': n['question'],
+        'suspected_condition': n.get('suspected_condition'),  # 行き先説明に使う
         'choices': [parse_choice(c) for c in n['choices']]
     })
 
@@ -151,8 +193,7 @@ cells.append(cell(r"""## 1.3. branch_table 上での着地集計と可視化
 - エッジの太さは通過件数に比例（0件のエッジは破線で表示）
 - `action='next'` の遷移先が `branch_table` 外（metadata_only ノードなど）の場合は yaml の `fallback.if_all_symptom_questions_negative` で着地扱い""", "markdown"))
 
-cells.append(cell(r"""# %pip install graphviz  # 実行した場合は Restart Kernel してから次のセルへ
-from graphviz import Digraph
+cells.append(cell(r"""from graphviz import Digraph
 from collections import defaultdict
 
 # 集計に必要なラベル変換（モデル1セクションで再定義されるが、可視化を前段で完結させるため早期に置く）
@@ -281,12 +322,6 @@ cells.append(cell(r"""# 2. ペアと分岐質問のベクトル化 & cos類似�
 
 Sentence-LUKE で「会話の各ラリー（ペア）」と「yaml の分岐質問」をベクトル化し、cos類似度を計算する。
 これにより、各分岐質問にどのラリーが対応しているかを抽出する。""", "markdown"))
-
-cells.append(cell(r"""# === 環境構築：すでに整備済みなら下記の %pip 行はそのままコメントで残す ===
-# ※ 一度でも %pip install を走らせた場合は、必ず Restart Kernel してから先に進むこと。
-#   そうしないと「MLukeTokenizer requires the SentencePiece library but it was not found」
-#   のような Dummy 化エラーが発生する。
-# %pip install transformers==4.46.3 sentencepiece fugashi ipadic unidic-lite protobuf tiktoken"""))
 
 cells.append(cell(r"""from transformers import MLukeTokenizer, LukeModel
 import torch
@@ -586,45 +621,133 @@ for r in seq_results:
     for step in r['trace']:
         print('   ', step)"""))
 
-cells.append(cell(r"""# 5. モデル2：選択強化BERT（単一 MultipleChoice BERT）
+cells.append(cell(r"""# 5. モデル2：選択強化BERT（履歴持ちエージェント / 単一 MultipleChoice BERT）
 
-1つの BERT が、yaml の任意の分岐ノードについて
-- **文脈**: 分岐質問 ＋ その分岐に紐づく採用ペア
-- **選択肢**: yaml の choices の各テキスト
+1つの BERT を **policy ネットワーク** として使い、`branch_table` の上を **状態を更新しながら歩く** エージェントを実装する。
 
-を入力に取り、選択肢インデックスを予測する。
-推論時は branch_table を順に走査し、毎回**同じモデル**で予測 → 選択肢に紐づく action（terminal/next/fallback）で遷移する。
+各ステップで BERT が見る state（context）:
 
-> BERTは「今どこにいて、次にどこに行かせるか」を、入力の **文脈 = 分岐質問** と **選択肢一覧** で認識し、出力した選択肢の `action`（yaml）で次の分岐 or 終端 triage が決まる。""", "markdown"))
+```
+[これまでの確認]
+- {過去の分岐の質問1} → {自分が選んだ回答1}
+- {過去の分岐の質問2} → {自分が選んだ回答2}
+- ...
 
-cells.append(cell("## 5.1. 学習データの生成（患者 × 分岐 のペア）", "markdown"))
+[現在の分岐]
+{今いる分岐の質問}
 
-cells.append(cell(r"""mc_examples = []  # {'patient_id', 'branch_id', 'context', 'choices', 'label'}
+[患者の発話]
+{この分岐に紐づく cos類似採用ペア}
+```
 
+**選択肢** は「→ 行き先」入り（次の分岐の質問文 or 終端 triage を埋め込み）。
+
+学習時も推論時も BERT は **常に同じ形式の state** を見る → 「policy」として一貫した振る舞いになる。
+学習データは「ground-truth ラベルでパスを歩きながら各ステップを記録」して作る。""", "markdown"))
+
+cells.append(cell("## 5.1. 選択肢テキスト & 状態の組み立て関数", "markdown"))
+
+cells.append(cell(r"""# 選択肢に「→ 行き先」情報を埋め込む
+# 例:
+#   はい → R2: くも膜下出血の疑い
+#   いいえ → 次の確認: しびれや麻痺がありますか？
+#   不明 → R3: 保留
+def render_choice_with_route(branch, choice):
+    base = choice['text']
+    if choice['action'] == 'terminal':
+        sc = f'：{branch["suspected_condition"]}の疑い' if branch.get('suspected_condition') else ''
+        return f'{base} → {choice["triage"]}{sc}'
+    elif choice['action'] == 'next':
+        next_b = next((x for x in branch_table if x['id'] == choice['next_id']), None)
+        if next_b is not None:
+            return f'{base} → 次の確認: 「{next_b["question"]}」'
+        else:
+            return f'{base} → 次の確認へ（{choice["next_id"]}）'
+    else:
+        return f'{base} → {choice["triage"]}（保留）'
+
+# エージェントの state を組み立てる
+def build_agent_context(branch, adopted_pairs, history):
+    parts = []
+    if history:
+        # これまで歩いた経路（質問とその選択）を全部見せる
+        hist_lines = '\n'.join([f'- {h["question"]} → {h["choice_text"]}' for h in history])
+        parts.append(f'[これまでの確認]\n{hist_lines}')
+    parts.append(f'[現在の分岐]\n{branch["question"]}')
+    if adopted_pairs:
+        parts.append(f'[患者の発話]\n{" ".join(adopted_pairs)}')
+    return '\n\n'.join(parts)
+
+# 動作確認
+print('=== 選択肢テキスト（行き先入り）===')
 for b in branch_table:
-    bid = b['id']
-    label_col = branch_to_label_col[bid]
-    adopted_col = f'採用ペア_{bid}'
-    choice_texts = [c['text'] for c in b['choices']]
-    code_to_idx = {c['code']: i for i, c in enumerate(b['choices'])}
+    print(f'\n[{b["id"]}] {b["question"]}')
+    for c in b['choices']:
+        print(f'  {c["code"]}: {render_choice_with_route(b, c)}')
 
-    for pid, sub in df_pairs.groupby('id'):
+print('\n=== state 例（branch 2 へ進んだ場合）===')
+demo_hist = [{
+    'question': branch_table[0]['question'],
+    'choice_text': branch_table[0]['choices'][1]['text'],  # 「いいえ」
+}]
+print(build_agent_context(branch_table[1], ['しびれは無いと言ってます'], demo_hist))"""))
+
+cells.append(cell(r"""# ground-truth ラベルでパスを歩き、各ステップを学習例として記録する
+mc_examples = []  # {'patient_id', 'branch_id', 'context', 'choices', 'label'}
+
+for pid, sub in df_pairs.groupby('id'):
+    history = []
+    current = branch_table[0]['id']
+    while True:
+        b = next(x for x in branch_table if x['id'] == current)
+        bid = b['id']
+        label_col = branch_to_label_col[bid]
+        adopted_col = f'採用ペア_{bid}'
         adopted_pairs = sub[sub[adopted_col] == True]['ペア'].tolist()
-        # 文脈 = 「分岐質問」+ 「採用ペア結合」
-        context = b['question'] + ' ' + ' '.join(adopted_pairs)
-        gold_data_label = int(sub[label_col].iloc[0])
-        gold_code = LABEL_TO_CHOICE_CODE[gold_data_label]
-        gold_idx = code_to_idx[gold_code]
+
+        # state（履歴 + 現在分岐 + 発話）
+        context = build_agent_context(b, adopted_pairs, history)
+
+        # 選択肢（行き先入り）
+        choice_texts = [render_choice_with_route(b, c) for c in b['choices']]
+        code_to_idx = {c['code']: i for i, c in enumerate(b['choices'])}
+
+        # ground truth の選択
+        gt_label = int(sub[label_col].iloc[0])
+        gt_code = LABEL_TO_CHOICE_CODE[gt_label]
+        gt_idx = code_to_idx[gt_code]
+        gt_choice = b['choices'][gt_idx]
+
         mc_examples.append({
             'patient_id': pid,
             'branch_id': bid,
             'context': context,
             'choices': choice_texts,
-            'label': gold_idx,
+            'label': gt_idx,
         })
 
+        # 履歴に記録して次へ
+        history.append({
+            'branch_id': bid,
+            'question': b['question'],
+            'choice_text': gt_choice['text'],
+        })
+
+        if gt_choice['action'] == 'next':
+            target = gt_choice['next_id']
+            if target in branch_ids:
+                current = target
+                continue
+            else:
+                # branch_table 外（metadata_only など）→ ループ脱出
+                break
+        else:  # terminal / fallback
+            break
+
 mc_df = pd.DataFrame(mc_examples)
-print(f'MultipleChoice 例数 = (患者数 × 分岐数) = {len(mc_df)}')
+print(f'MC エージェント学習例数（patientsごとに ground-truthパスを歩いた合計）= {len(mc_df)}')
+print(f'patient数: {mc_df["patient_id"].nunique()}, ステップ数の分布:')
+print(mc_df.groupby('patient_id').size().value_counts().sort_index())
 display(mc_df.head(10))"""))
 
 cells.append(cell("## 5.2. BertForMultipleChoice の学習", "markdown"))
@@ -714,53 +837,75 @@ for ep in range(epochs):
 
 cells.append(cell("## 5.3. yaml の「分岐 → 選択肢」サイクルで遷移図をたどる", "markdown"))
 
-cells.append(cell(r"""def mc_predict_one(model, tokenizer, branch, patient_pairs_texts, max_len=128):
-    # 1分岐に対し MC-BERT で選択肢インデックスと信頼度を返す
-    ctx = branch['question'] + ' ' + ' '.join(patient_pairs_texts)
-    choices = [c['text'] for c in branch['choices']]
-    n_valid = len(choices)
-    while len(choices) < NUM_CHOICES:
-        choices.append('')
+cells.append(cell(r"""def mc_agent_step(model, tokenizer, context, choice_texts, max_len=128):
+    # 1ステップ: context（履歴入りstate）と選択肢から1つを選ぶ
+    n_valid = len(choice_texts)
+    cs = list(choice_texts)
+    while len(cs) < NUM_CHOICES:
+        cs.append('')
     enc = tokenizer(
-        [ctx] * NUM_CHOICES, choices,
+        [context] * NUM_CHOICES, cs,
         padding='max_length', truncation=True, max_length=max_len, return_tensors='pt'
     )
     ids = enc['input_ids'].unsqueeze(0).to(device)
     mask = enc['attention_mask'].unsqueeze(0).to(device)
     model.eval()
     with torch.no_grad():
-        logits = model(input_ids=ids, attention_mask=mask).logits  # [1, NUM_CHOICES]
-    # 有効な選択肢だけで softmax
+        logits = model(input_ids=ids, attention_mask=mask).logits
     valid_logits = logits[0, :n_valid]
     probs = F.softmax(valid_logits, dim=-1).cpu().numpy()
     pred_idx = int(probs.argmax())
     return pred_idx, float(probs[pred_idx])
 
 
-def mc_sequential_predict(patient_id, df_pairs, branch_table, model_mc, tokenizer_mc,
-                          threshold_confidence=0.5):
+def mc_agent_predict(patient_id, df_pairs, branch_table, model_mc, tokenizer_mc,
+                     threshold_confidence=0.5):
+    # 履歴を保持しながら遷移図を歩く（学習時と同じ state 形式）
     trace = []
-    for b in branch_table:
-        bid = b['id']
-        adopted_col = f'採用ペア_{bid}'
-        patient_pairs = df_pairs[(df_pairs['id'] == patient_id) & (df_pairs[adopted_col] == True)]['ペア'].tolist()
-        pred_idx, conf = mc_predict_one(model_mc, tokenizer_mc, b, patient_pairs)
+    history = []  # 過去ステップの (branch_id, question, choice_text)
+    current = branch_table[0]['id']
+    while True:
+        b = next(x for x in branch_table if x['id'] == current)
+        adopted_col = f'採用ペア_{b["id"]}'
+        adopted_pairs = df_pairs[(df_pairs['id'] == patient_id)
+                                 & (df_pairs[adopted_col] == True)]['ペア'].tolist()
+        context = build_agent_context(b, adopted_pairs, history)
+        choice_texts = [render_choice_with_route(b, c) for c in b['choices']]
+
+        pred_idx, conf = mc_agent_step(model_mc, tokenizer_mc, context, choice_texts)
+
         if conf < threshold_confidence:
-            trace.append({'branch': bid, 'predicted_idx': pred_idx, 'confidence': conf,
+            trace.append({'branch': b['id'], 'predicted_idx': pred_idx, 'confidence': conf,
                           'action': 'low_confidence', 'triage': 'R3'})
             return 'R3', trace
+
         choice = b['choices'][pred_idx]
-        trace.append({'branch': bid, 'predicted_idx': pred_idx, 'confidence': conf,
+        trace.append({'branch': b['id'], 'predicted_idx': pred_idx, 'confidence': conf,
                       'choice': choice['text'], 'action': choice['action']})
+        # 履歴更新
+        history.append({
+            'branch_id': b['id'],
+            'question': b['question'],
+            'choice_text': choice['text'],
+        })
+
         if choice['action'] in ('terminal', 'fallback'):
             return choice['triage'], trace
+        # next の場合は次の分岐へ
+        target = choice.get('next_id')
+        if target in branch_ids:
+            current = target
+            continue
+        else:
+            # branch_table 外 → fallback
+            return fallback_triage, trace
     return fallback_triage, trace
 
 
 mc_results = []
 for pid in all_patient_ids:
-    pred_triage, trace = mc_sequential_predict(pid, df_pairs, branch_table, model_mc, tokenizer_mc,
-                                               threshold_confidence=threshold_confidence)
+    pred_triage, trace = mc_agent_predict(pid, df_pairs, branch_table, model_mc, tokenizer_mc,
+                                          threshold_confidence=threshold_confidence)
     true_triage_code = df_pairs[df_pairs['id'] == pid]['トリアージ'].iloc[0]
     mc_results.append({
         'id': pid,
@@ -770,28 +915,117 @@ for pid in all_patient_ids:
     })
 
 mc_results_df = pd.DataFrame(mc_results)
-display(mc_results_df[['id', '真のトリアージ', 'モデル2予測']])
+display(mc_results_df[['id', '真のトリアージ', 'モデル2予測']].head(20))
 
-for r in mc_results:
+# 数件だけ詳細trace
+print('\n=== サンプル trace（最初の5患者）===')
+for r in mc_results[:5]:
     print(f'\n[id={r["id"]}] 真={r["真のトリアージ"]} / 予測={r["モデル2予測"]}')
     for step in r['trace']:
         print('   ', step)"""))
 
-cells.append(cell(r"""# 6. 2モデルの比較
+cells.append(cell(r"""# 6. モデル3：直接BERT（遷移図を使わない baseline）
 
-同じ「yaml の 分岐 → 選択肢 サイクル」を、3つの専用BERT（モデル1）と単一MC-BERT（モデル2）でたどった結果を並べる。""", "markdown"))
+会話全体を1本の文脈として読み、**遷移図を一切使わず**に最終 triage（R2/R3/Y2）を直接 3クラス分類する単一BERT。
+遷移図ベース（モデル1・2）と比較することで、「遷移図を経由する設計の利得」が見える対照モデル。
 
-cells.append(cell(r"""compare_df = seq_df[['id', '真のトリアージ', 'モデル1予測']].merge(
-    mc_results_df[['id', 'モデル2予測']], on='id'
+- 入力: 患者の会話ペア全部を連結
+- 出力: トリアージ（0:R3, 1:R2, 2:Y2）
+- 構造: `BertForSequenceClassification(num_labels=3)`""", "markdown"))
+
+cells.append(cell(r"""## 6.1. 学習データ準備と学習""", "markdown"))
+
+cells.append(cell(r"""# 患者ごとに「会話ペア全部の連結」を作る
+direct_data = df_pairs.groupby('id').agg(
+    input_text=('ペア', lambda x: ' '.join(x)),
+    label=('トリアージ', 'first'),
+).reset_index()
+print(f'直接BERT 学習対象: {len(direct_data)} 患者')
+
+le_direct = LabelEncoder()
+direct_data['encoded'] = le_direct.fit_transform(direct_data['label'])
+n_labels_direct = direct_data['encoded'].nunique()
+print(f'クラス数: {n_labels_direct} / 分布: {dict(direct_data["label"].value_counts().sort_index())}')
+
+X_d_tr, X_d_te, y_d_tr, y_d_te, id_d_tr, id_d_te = train_test_split(
+    direct_data['input_text'], direct_data['encoded'], direct_data['id'],
+    test_size=1/3, random_state=42,
+    stratify=direct_data['encoded'] if n_labels_direct > 1 else None
+)
+print(f'train={len(X_d_tr)}, test={len(X_d_te)}')
+
+tokenizer_direct = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
+enc_tr = tokenizer_direct(X_d_tr.tolist(), padding='max_length', truncation=True, max_length=max_len, return_tensors='pt')
+enc_te = tokenizer_direct(X_d_te.tolist(), padding='max_length', truncation=True, max_length=max_len, return_tensors='pt')
+
+tr_ds_d = TensorDataset(enc_tr['input_ids'], enc_tr['attention_mask'], torch.tensor(y_d_tr.tolist()))
+te_ds_d = TensorDataset(enc_te['input_ids'], enc_te['attention_mask'], torch.tensor(y_d_te.tolist()))
+tr_dl_d = DataLoader(tr_ds_d, batch_size=4, shuffle=True)
+te_dl_d = DataLoader(te_ds_d, batch_size=4, shuffle=False)
+
+model_direct = BertForSequenceClassification.from_pretrained(
+    'cl-tohoku/bert-base-japanese-whole-word-masking',
+    num_labels=n_labels_direct, attn_implementation='eager'
+).to(device)
+optimizer_direct = AdamW(model_direct.parameters(), lr=2e-5)
+
+for ep in range(epochs):
+    tl = train_one_epoch(model_direct, tr_dl_d, optimizer_direct)
+    vl, acc, f1 = evaluate_model(model_direct, te_dl_d)
+    print(f'[直接BERT] Epoch {ep+1}: train_loss={tl:.4f}, test_loss={vl:.4f}, acc={acc:.4f}, f1={f1:.4f}')"""))
+
+cells.append(cell(r"""## 6.2. 直接BERTの推論（全患者）""", "markdown"))
+
+cells.append(cell(r"""def direct_predict(patient_id, df_pairs, model, tokenizer, le, max_len=128):
+    patient_pairs = df_pairs[df_pairs['id'] == patient_id]['ペア'].tolist()
+    text = ' '.join(patient_pairs)
+    enc = tokenizer([text], padding='max_length', truncation=True, max_length=max_len, return_tensors='pt').to(device)
+    model.eval()
+    with torch.no_grad():
+        logits = model(**enc).logits
+    pred_idx = int(logits.argmax(-1)[0])
+    pred_label = int(le.inverse_transform([pred_idx])[0])
+    return triage_decode.get(pred_label, str(pred_label))
+
+direct_results = []
+for pid in all_patient_ids:
+    pred = direct_predict(pid, df_pairs, model_direct, tokenizer_direct, le_direct, max_len)
+    true_code = df_pairs[df_pairs['id'] == pid]['トリアージ'].iloc[0]
+    direct_results.append({
+        'id': pid,
+        '真のトリアージ': triage_decode.get(int(true_code), str(true_code)),
+        'モデル3予測': pred,
+    })
+direct_results_df = pd.DataFrame(direct_results)
+display(direct_results_df.head(20))"""))
+
+cells.append(cell(r"""# 7. 3モデルの比較
+
+同じ全患者を3つの設計で解いた結果を並べる：
+- **モデル1**：分岐ごとの専用BERT × 順次（greedy）traversal
+- **モデル2**：単一 MC-BERT（選択肢に行き先情報を埋め込み）× 同じ traversal
+- **モデル3**：直接BERT — 遷移図を使わず会話全体から triage 直接分類（baseline）""", "markdown"))
+
+cells.append(cell(r"""compare_df = (
+    seq_df[['id', '真のトリアージ', 'モデル1予測']]
+    .merge(mc_results_df[['id', 'モデル2予測']], on='id')
+    .merge(direct_results_df[['id', 'モデル3予測']], on='id')
 )
 compare_df['モデル1正解'] = compare_df['真のトリアージ'] == compare_df['モデル1予測']
 compare_df['モデル2正解'] = compare_df['真のトリアージ'] == compare_df['モデル2予測']
+compare_df['モデル3正解'] = compare_df['真のトリアージ'] == compare_df['モデル3予測']
 display(compare_df)
 
 m1_acc = compare_df['モデル1正解'].mean()
 m2_acc = compare_df['モデル2正解'].mean()
-print(f'\nモデル1（全BERT 順次）      Accuracy: {m1_acc:.4f}')
-print(f'モデル2（選択強化BERT 単一）Accuracy: {m2_acc:.4f}')"""))
+m3_acc = compare_df['モデル3正解'].mean()
+print(f'\nモデル1（全BERT 順次・遷移図あり）         Accuracy: {m1_acc:.4f}')
+print(f'モデル2（選択強化BERT 単一・遷移図あり）   Accuracy: {m2_acc:.4f}')
+print(f'モデル3（直接BERT 単一・遷移図なし）       Accuracy: {m3_acc:.4f}')
+
+# triage 別の正解率
+print('\n=== triage別正解率 ===')
+print(compare_df.groupby('真のトリアージ')[['モデル1正解', 'モデル2正解', 'モデル3正解']].mean())"""))
 
 
 nb = {
