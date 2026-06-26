@@ -567,8 +567,12 @@ def compute_metrics(res_df, node_records):
 # ============================================================
 cells.append(cell("# 6. `run_experiment(config)` — 5 モデルを config で出し分け", "markdown"))
 
-cells.append(cell(r"""def run_experiment(config):
+cells.append(cell(r"""def run_experiment(config, train_ids=None, test_ids=None):
     cfg = {**DEFAULT_CONFIG, **config}
+    # fold 指定がなければグローバルの 7:3 split を使う
+    train_ids = TRAIN_IDS if train_ids is None else train_ids
+    test_ids = TEST_IDS if test_ids is None else test_ids
+    test_set = set(test_ids)
     print(f'\n{"="*64}\n[{cfg["name"]}]  head={cfg["head"]} share={cfg["share_encoder"]} '
           f'hist={cfg["use_history"]} route={cfg["use_route"]}\n{"="*64}')
 
@@ -576,13 +580,13 @@ cells.append(cell(r"""def run_experiment(config):
     if cfg['head'] == 'direct':
         direct = df_pairs.groupby('id').agg(
             text=('ペア', lambda x: ' '.join(x)), label=('トリアージ', 'first')).reset_index()
-        tr = direct[direct['id'].isin(TRAIN_IDS)]
+        tr = direct[direct['id'].isin(train_ids)]
         model, tok = train_seqcls(tr['text'], tr['label'].astype(int), 3, cfg)
         rows = []
         for _, r in direct.iterrows():
             idx, _ = seqcls_predict(model, tok, r['text'], 3, cfg['max_len'])
             rows.append({'id': r['id'], '真': triage_decode[int(r['label'])],
-                         '予測': triage_decode[idx], 'in_test': r['id'] in TEST_SET,
+                         '予測': triage_decode[idx], 'in_test': r['id'] in test_set,
                          '経路一致': np.nan})
         res_df = pd.DataFrame(rows)
         m = compute_metrics(res_df, [])
@@ -593,7 +597,7 @@ cells.append(cell(r"""def run_experiment(config):
     # ---------- 学習例を生成 ----------
     ex = build_step_examples(cfg['use_node_question'], cfg['use_history'],
                              cfg['use_route'], cfg['full_coverage'])
-    ex_tr = ex[ex['patient_id'].isin(TRAIN_IDS)].reset_index(drop=True)
+    ex_tr = ex[ex['patient_id'].isin(train_ids)].reset_index(drop=True)
 
     # ---------- 学習 ----------
     if cfg['head'] == 'mc':
@@ -630,7 +634,7 @@ cells.append(cell(r"""def run_experiment(config):
         pred_idx = choose_example(row)
         node_records.append({'branch_id': row['branch_id'],
                              'correct': int(pred_idx == row['label']),
-                             'in_test': row['patient_id'] in TEST_SET})
+                             'in_test': row['patient_id'] in test_set})
 
     # ---------- 最終 triage（greedy トラバーサル） ----------
     rows = []
@@ -642,7 +646,7 @@ cells.append(cell(r"""def run_experiment(config):
             'id': pid,
             '真': triage_decode[int(sub['トリアージ'].iloc[0])],
             '予測': pred_triage,
-            'in_test': pid in TEST_SET,
+            'in_test': pid in test_set,
             '経路一致': int(pred_path == gpath),
         })
     res_df = pd.DataFrame(rows)
@@ -758,6 +762,83 @@ cells.append(cell(r"""## 9. 解釈メモ
 
 > 注意：162件・7:3 単一 split のため数値は分散が大きい。結論を出す前に **複数 seed か 5-fold CV** で平均±標準偏差を取ること（`random_state` を振って `run_experiment` を回す）。
 > ノード単位 acc は `by_node` に分岐別で入っているので、`for r in all_results: print(r["name"], r["by_node"])` で「どの分岐が弱いか」を確認できる。""", "markdown"))
+
+# ============================================================
+# 10. 5-fold 交差検証（初期の遷移型BERT）
+# ============================================================
+cells.append(cell(r"""# 10. 5-fold 交差検証（初期の遷移型BERT）
+
+**遷移型BERT**＝頭痛確定ノードから3分岐（急な痛み→しびれ→振る舞い）を1本の共有BERTで辿るモデル
+（node-level FT・履歴なし）。これを **患者単位 5-fold CV** で検証し、mean±std を出す。
+
+- Y2 が 6 件と少ないので **StratifiedKFold（triage で層化）** で各 fold に散らす
+- baseline として M3 直接BERT も同じ fold で CV
+- 各 fold の test 集合の指標を集計（最終triage acc / macro-F1 / under-triage / 経路一致 / ノード単位acc）""", "markdown"))
+
+cells.append(cell(r"""from sklearn.model_selection import StratifiedKFold
+
+# 患者単位の triage（層化キー）
+PATIENT_TRIAGE = [triage_decode[int(df_pairs[df_pairs['id'] == pid]['トリアージ'].iloc[0])]
+                  for pid in all_patient_ids]
+
+
+def run_cv(config, n_splits=5, seed=42):
+    ids = np.array(all_patient_ids)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    folds = []
+    for k, (tr, te) in enumerate(skf.split(ids, PATIENT_TRIAGE)):
+        train_ids, test_ids = ids[tr].tolist(), ids[te].tolist()
+        print(f'\n##### {config["name"]} — fold {k+1}/{n_splits} '
+              f'(train={len(train_ids)}, test={len(test_ids)})')
+        m = run_experiment({**config, 'name': f'{config["name"]} [f{k+1}]'},
+                           train_ids=train_ids, test_ids=test_ids)
+        folds.append(m)
+    keys = ['overall_acc', 'macro_f1', 'under_triage', 'path_match', 'node_acc']
+    agg = {}
+    for key in keys:
+        vals = [f[key] for f in folds if f[key] == f[key]]   # NaN を除外
+        agg[key] = (float(np.mean(vals)), float(np.std(vals))) if vals else (float('nan'), float('nan'))
+    print(f'\n{"="*50}\n=== {config["name"]} 5-fold CV (mean±std) ===')
+    for key in keys:
+        mu, sd = agg[key]
+        print(f'  {key:14s}: {mu:.3f} ± {sd:.3f}')
+    return {'name': config['name'], 'folds': folds, 'agg': agg}"""))
+
+cells.append(cell(r"""# 検証する config（遷移型BERT本命 ＋ M3 baseline）
+TRANS_CFG = {'name': '遷移型BERT (共有/履歴なし)',
+             'head': 'seqcls', 'use_history': False, 'use_route': False}
+M3_CFG = {'name': 'M3 直接BERT', 'head': 'direct'}
+
+cv_trans = run_cv(TRANS_CFG, n_splits=5, seed=42)
+cv_m3 = run_cv(M3_CFG, n_splits=5, seed=42)"""))
+
+cells.append(cell(r"""# CV サマリ（mean ± std）
+def cv_row(cv):
+    row = {'model': cv['name']}
+    for key, (mu, sd) in cv['agg'].items():
+        row[key] = f'{mu:.3f} ± {sd:.3f}'
+    return row
+
+cv_summary = pd.DataFrame([cv_row(cv_trans), cv_row(cv_m3)])
+display(cv_summary)
+
+import os
+os.makedirs('output', exist_ok=True)
+cv_summary.to_csv('output/cv_summary.csv', index=False, encoding='utf-8-sig')
+
+# fold ごとの overall_acc も残す
+fold_rows = []
+for cv in (cv_trans, cv_m3):
+    for k, f in enumerate(cv['folds']):
+        fold_rows.append({'model': cv['name'], 'fold': k + 1,
+                          'overall_acc': round(f['overall_acc'], 3),
+                          'macro_f1': round(f['macro_f1'], 3),
+                          'under_triage': round(f['under_triage'], 3),
+                          'node_acc': round(f['node_acc'], 3) if f['node_acc'] == f['node_acc'] else None})
+fold_df = pd.DataFrame(fold_rows)
+fold_df.to_csv('output/cv_folds.csv', index=False, encoding='utf-8-sig')
+print('saved: output/cv_summary.csv, output/cv_folds.csv')
+display(fold_df)"""))
 
 # ============================================================
 # 書き出し
