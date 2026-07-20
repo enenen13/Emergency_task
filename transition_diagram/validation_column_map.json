@@ -1,0 +1,533 @@
+{
+ "_meta": {
+  "purpose": "df_validation_input の 症状_質問N 列 → BERTノード 対応",
+  "n_cols": 105
+ },
+ "columns": {
+  "共通_質問1": {
+   "node": "00_overview",
+   "pair_col": "共通_質問1ペア",
+   "bun_col": "共通_質問1文"
+  },
+  "共通_質問2": {
+   "node": "00_observation",
+   "pair_col": "共通_質問2ペア",
+   "bun_col": "共通_質問2文"
+  },
+  "共通_質問3": {
+   "node": "00_common_breathing",
+   "pair_col": "共通_質問3ペア",
+   "bun_col": "共通_質問3文"
+  },
+  "共通_質問4": {
+   "node": "00_common_cold_sweat",
+   "pair_col": "共通_質問4ペア",
+   "bun_col": "共通_質問4文"
+  },
+  "共通_質問5": {
+   "node": "00_common_face_color",
+   "pair_col": "共通_質問5ペア",
+   "bun_col": "共通_質問5文"
+  },
+  "共通_質問6": {
+   "node": "00_common_conversation",
+   "pair_col": "共通_質問6ペア",
+   "bun_col": "共通_質問6文"
+  },
+  "動悸_質問1": {
+   "node": "03_heart_history",
+   "pair_col": "動悸_質問1ペア",
+   "bun_col": "動悸_質問1文"
+  },
+  "動悸_質問2": {
+   "node": "03_icd_fired",
+   "pair_col": "動悸_質問2ペア",
+   "bun_col": "動悸_質問2文"
+  },
+  "動悸_質問3": {
+   "node": "03_chest_pain",
+   "pair_col": "動悸_質問3ペア",
+   "bun_col": "動悸_質問3文"
+  },
+  "意識障害／失神_質問1": {
+   "node": "04_breath_count",
+   "pair_col": "意識障害／失神_質問1ペア",
+   "bun_col": "意識障害／失神_質問1文"
+  },
+  "意識障害／失神_質問2": {
+   "node": "04_heart_history",
+   "pair_col": "意識障害／失神_質問2ペア",
+   "bun_col": "意識障害／失神_質問2文"
+  },
+  "意識障害／失神_質問4": {
+   "node": "04_abdominal_pain",
+   "pair_col": "意識障害／失神_質問4ペア",
+   "bun_col": "意識障害／失神_質問4文"
+  },
+  "けいれん_質問1": {
+   "node": "05_scope",
+   "pair_col": "けいれん_質問1ペア",
+   "bun_col": "けいれん_質問1文"
+  },
+  "けいれん_質問2": {
+   "node": "05_continues",
+   "pair_col": "けいれん_質問2ペア",
+   "bun_col": "けいれん_質問2文"
+  },
+  "けいれん_質問3": {
+   "node": "05_breath_signal",
+   "pair_col": "けいれん_質問3ペア",
+   "bun_col": "けいれん_質問3文"
+  },
+  "けいれん_質問4": {
+   "node": "05_pregnant",
+   "pair_col": "けいれん_質問4ペア",
+   "bun_col": "けいれん_質問4文"
+  },
+  "けいれん_質問5": {
+   "node": "05_diabetes",
+   "pair_col": "けいれん_質問5ペア",
+   "bun_col": "けいれん_質問5文"
+  },
+  "けいれん_質問6": {
+   "node": "05_predicted",
+   "pair_col": "けいれん_質問6ペア",
+   "bun_col": "けいれん_質問6文"
+  },
+  "頭痛_質問1": {
+   "node": "06_headache_sudden_severe",
+   "pair_col": "頭痛_質問1ペア",
+   "bun_col": "頭痛_質問1文"
+  },
+  "頭痛_質問2": {
+   "node": "06_headache_numbness_paralysis",
+   "pair_col": "頭痛_質問2ペア",
+   "bun_col": "頭痛_質問2文"
+  },
+  "頭痛_質問3": {
+   "node": "06_headache_abnormal_behavior",
+   "pair_col": "頭痛_質問3ペア",
+   "bun_col": "頭痛_質問3文"
+  },
+  "胸痛（非外傷性）_質問1": {
+   "node": "07_nausea_vomiting",
+   "pair_col": "胸痛（非外傷性）_質問1ペア",
+   "bun_col": "胸痛（非外傷性）_質問1文"
+  },
+  "胸痛（非外傷性）_質問2": {
+   "node": "07_mi_angina_history",
+   "pair_col": "胸痛（非外傷性）_質問2ペア",
+   "bun_col": "胸痛（非外傷性）_質問2文"
+  },
+  "胸痛（非外傷性）_質問3": {
+   "node": "07_recurrent_pain",
+   "pair_col": "胸痛（非外傷性）_質問3ペア",
+   "bun_col": "胸痛（非外傷性）_質問3文"
+  },
+  "胸痛（非外傷性）_質問4": {
+   "node": "07_age_40",
+   "pair_col": "胸痛（非外傷性）_質問4ペア",
+   "bun_col": "胸痛（非外傷性）_質問4文"
+  },
+  "背部痛_質問1": {
+   "node": "08_trauma",
+   "pair_col": "背部痛_質問1ペア",
+   "bun_col": "背部痛_質問1文"
+  },
+  "背部痛_質問2": {
+   "node": "08_dyspnea_recheck",
+   "pair_col": "背部痛_質問2ペア",
+   "bun_col": "背部痛_質問2文"
+  },
+  "背部痛_質問3": {
+   "node": "08_chest_pain_40",
+   "pair_col": "背部痛_質問3ペア",
+   "bun_col": "背部痛_質問3文"
+  },
+  "背部痛_質問4": {
+   "node": "08_aortic_aneurysm_history",
+   "pair_col": "背部痛_質問4ペア",
+   "bun_col": "背部痛_質問4文"
+  },
+  "背部痛_質問5": {
+   "node": "08_presyncope_65",
+   "pair_col": "背部痛_質問5ペア",
+   "bun_col": "背部痛_質問5文"
+  },
+  "背部痛_質問6": {
+   "node": "08_pain_quality_65",
+   "pair_col": "背部痛_質問6ペア",
+   "bun_col": "背部痛_質問6文"
+  },
+  "腰部痛_質問1": {
+   "node": "09_trauma",
+   "pair_col": "腰部痛_質問1ペア",
+   "bun_col": "腰部痛_質問1文"
+  },
+  "腰部痛_質問2": {
+   "node": "09_dyspnea_recheck",
+   "pair_col": "腰部痛_質問2ペア",
+   "bun_col": "腰部痛_質問2文"
+  },
+  "腰部痛_質問3": {
+   "node": "09_chest_pain_40",
+   "pair_col": "腰部痛_質問3ペア",
+   "bun_col": "腰部痛_質問3文"
+  },
+  "腰部痛_質問4": {
+   "node": "09_aortic_aneurysm_history",
+   "pair_col": "腰部痛_質問4ペア",
+   "bun_col": "腰部痛_質問4文"
+  },
+  "腰部痛_質問5": {
+   "node": "09_presyncope_65",
+   "pair_col": "腰部痛_質問5ペア",
+   "bun_col": "腰部痛_質問5文"
+  },
+  "腰部痛_質問6": {
+   "node": "09_pain_quality_65",
+   "pair_col": "腰部痛_質問6ペア",
+   "bun_col": "腰部痛_質問6文"
+  },
+  "成人の発熱（16歳以上）_質問1": {
+   "node": "10_cannot_situp",
+   "pair_col": "成人の発熱（16歳以上）_質問1ペア",
+   "bun_col": "成人の発熱（16歳以上）_質問1文"
+  },
+  "成人の発熱（16歳以上）_質問2": {
+   "node": "10_headache_vomit",
+   "pair_col": "成人の発熱（16歳以上）_質問2ペア",
+   "bun_col": "成人の発熱（16歳以上）_質問2文"
+  },
+  "成人の発熱（16歳以上）_質問3": {
+   "node": "10_heat_exposure",
+   "pair_col": "成人の発熱（16歳以上）_質問3ペア",
+   "bun_col": "成人の発熱（16歳以上）_質問3文"
+  },
+  "成人の発熱（16歳以上）_質問4": {
+   "node": "10_headache_consciousness",
+   "pair_col": "成人の発熱（16歳以上）_質問4ペア",
+   "bun_col": "成人の発熱（16歳以上）_質問4文"
+  },
+  "腹痛_質問1": {
+   "node": "11_aortic_aneurysm_history",
+   "pair_col": "腹痛_質問1ペア",
+   "bun_col": "腹痛_質問1文"
+  },
+  "腹痛_質問2": {
+   "node": "11_presyncope_risk_age",
+   "pair_col": "腹痛_質問2ペア",
+   "bun_col": "腹痛_質問2文"
+  },
+  "腹痛_質問3": {
+   "node": "11_above_navel",
+   "pair_col": "腹痛_質問3ペア",
+   "bun_col": "腹痛_質問3文"
+  },
+  "腹痛_質問4": {
+   "node": "11_pain_quality_65",
+   "pair_col": "腹痛_質問4ペア",
+   "bun_col": "腹痛_質問4文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問1": {
+   "node": "12_vomit_blood",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問1ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問1文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問2": {
+   "node": "12_vomit_2days",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問2ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問2文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問3": {
+   "node": "12_vomit_strong_abdominal_pain",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問3ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問3文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問4": {
+   "node": "12_vomit_abdominal_distension",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問4ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問4文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問5": {
+   "node": "12_vomit_chest_back_pain",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問5ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問5文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問6": {
+   "node": "12_vomit_recent_trauma",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問6ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問6文"
+  },
+  "成人の嘔気・嘔吐（16歳以上）_質問7": {
+   "node": "12_vomit_strong_headache",
+   "pair_col": "成人の嘔気・嘔吐（16歳以上）_質問7ペア",
+   "bun_col": "成人の嘔気・嘔吐（16歳以上）_質問7文"
+  },
+  "めまい_質問1": {
+   "node": "13_dizzy_cannot_move",
+   "pair_col": "めまい_質問1ペア",
+   "bun_col": "めまい_質問1文"
+  },
+  "めまい_質問2": {
+   "node": "13_dizzy_weakness",
+   "pair_col": "めまい_質問2ペア",
+   "bun_col": "めまい_質問2文"
+  },
+  "めまい_質問3": {
+   "node": "13_dizzy_diarrhea_vomiting",
+   "pair_col": "めまい_質問3ペア",
+   "bun_col": "めまい_質問3文"
+  },
+  "めまい_質問4": {
+   "node": "13_dizzy_nausea",
+   "pair_col": "めまい_質問4ペア",
+   "bun_col": "めまい_質問4文"
+  },
+  "めまい_質問5": {
+   "node": "13_dizzy_speech_difficulty",
+   "pair_col": "めまい_質問5ペア",
+   "bun_col": "めまい_質問5文"
+  },
+  "めまい_質問6": {
+   "node": "13_dizzy_hypertension",
+   "pair_col": "めまい_質問6ペア",
+   "bun_col": "めまい_質問6文"
+  },
+  "めまい_質問7": {
+   "node": "13_dizzy_visual_disturbance",
+   "pair_col": "めまい_質問7ペア",
+   "bun_col": "めまい_質問7文"
+  },
+  "めまい_質問8": {
+   "node": "13_dizzy_arrhythmia",
+   "pair_col": "めまい_質問8ペア",
+   "bun_col": "めまい_質問8文"
+  },
+  "めまい_質問9": {
+   "node": "13_dizzy_chest_pain",
+   "pair_col": "めまい_質問9ペア",
+   "bun_col": "めまい_質問9文"
+  },
+  "めまい_質問10": {
+   "node": "13_dizzy_severe",
+   "pair_col": "めまい_質問10ペア",
+   "bun_col": "めまい_質問10文"
+  },
+  "めまい_質問11": {
+   "node": "13_dizzy_headache",
+   "pair_col": "めまい_質問11ペア",
+   "bun_col": "めまい_質問11文"
+  },
+  "しびれ_質問1": {
+   "node": "14_numbness_stroke_symptoms",
+   "pair_col": "しびれ_質問1ペア",
+   "bun_col": "しびれ_質問1文"
+  },
+  "しびれ_質問2": {
+   "node": "14_numbness_stroke_history",
+   "pair_col": "しびれ_質問2ペア",
+   "bun_col": "しびれ_質問2文"
+  },
+  "吐血・喀血_質問1": {
+   "node": "15_hematemesis_amount",
+   "pair_col": "吐血・喀血_質問1ペア",
+   "bun_col": "吐血・喀血_質問1文"
+  },
+  "吐血・喀血_質問2": {
+   "node": "15_hematemesis_chest_or_abdominal_pain",
+   "pair_col": "吐血・喀血_質問2ペア",
+   "bun_col": "吐血・喀血_質問2文"
+  },
+  "下血・血便_質問1": {
+   "node": "16_melena_amount",
+   "pair_col": "下血・血便_質問1ペア",
+   "bun_col": "下血・血便_質問1文"
+  },
+  "下血・血便_質問2": {
+   "node": "16_melena_abdominal_pain",
+   "pair_col": "下血・血便_質問2ペア",
+   "bun_col": "下血・血便_質問2文"
+  },
+  "具合が悪い・気分が悪い_質問1": {
+   "node": "17_malaise_pain_anywhere",
+   "pair_col": "具合が悪い・気分が悪い_質問1ペア",
+   "bun_col": "具合が悪い・気分が悪い_質問1文"
+  },
+  "具合が悪い・気分が悪い_質問2": {
+   "node": "17_malaise_pain_location",
+   "pair_col": "具合が悪い・気分が悪い_質問2ペア",
+   "bun_col": "具合が悪い・気分が悪い_質問2文"
+  },
+  "具合が悪い・気分が悪い_質問3": {
+   "node": "17_malaise_weakness",
+   "pair_col": "具合が悪い・気分が悪い_質問3ペア",
+   "bun_col": "具合が悪い・気分が悪い_質問3文"
+  },
+  "具合が悪い・気分が悪い_質問4": {
+   "node": "17_malaise_speech",
+   "pair_col": "具合が悪い・気分が悪い_質問4ペア",
+   "bun_col": "具合が悪い・気分が悪い_質問4文"
+  },
+  "具合が悪い・気分が悪い_質問5": {
+   "node": "17_malaise_diarrhea_vomiting",
+   "pair_col": "具合が悪い・気分が悪い_質問5ペア",
+   "bun_col": "具合が悪い・気分が悪い_質問5文"
+  },
+  "外傷_質問1": {
+   "node": "18_trauma_bleeding",
+   "pair_col": "外傷_質問1ペア",
+   "bun_col": "外傷_質問1文"
+  },
+  "外傷_質問2": {
+   "node": "18_trauma_type",
+   "pair_col": "外傷_質問2ペア",
+   "bun_col": "外傷_質問2文"
+  },
+  "固形物誤飲_質問1": {
+   "node": "19_foreign_body_speak_cry",
+   "pair_col": "固形物誤飲_質問1ペア",
+   "bun_col": "固形物誤飲_質問1文"
+  },
+  "中毒_質問1": {
+   "node": "20_poisoning_speak_cry",
+   "pair_col": "中毒_質問1ペア",
+   "bun_col": "中毒_質問1文"
+  },
+  "小児の発熱（16歳未満）_質問1": {
+   "node": "21_ped_fever_consciousness",
+   "pair_col": "小児の発熱（16歳未満）_質問1ペア",
+   "bun_col": "小児の発熱（16歳未満）_質問1文"
+  },
+  "小児の発熱（16歳未満）_質問2": {
+   "node": "21_ped_fever_drowsy",
+   "pair_col": "小児の発熱（16歳未満）_質問2ペア",
+   "bun_col": "小児の発熱（16歳未満）_質問2文"
+  },
+  "小児の発熱（16歳未満）_質問3": {
+   "node": "21_ped_fever_agitated",
+   "pair_col": "小児の発熱（16歳未満）_質問3ペア",
+   "bun_col": "小児の発熱（16歳未満）_質問3文"
+  },
+  "小児の発熱（16歳未満）_質問4": {
+   "node": "21_ped_fever_severe_headache",
+   "pair_col": "小児の発熱（16歳未満）_質問4ペア",
+   "bun_col": "小児の発熱（16歳未満）_質問4文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問1": {
+   "node": "22_ped_vomit_repeated",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問1ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問1文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問2": {
+   "node": "22_ped_vomit_blood_bile",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問2ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問2文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問3": {
+   "node": "22_ped_vomit_fever",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問3ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問3文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問4": {
+   "node": "22_ped_vomit_no_urine",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問4ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問4文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問5": {
+   "node": "22_ped_vomit_lethargic",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問5ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問5文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問6": {
+   "node": "22_ped_vomit_infant_projectile",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問6ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問6文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問7": {
+   "node": "22_ped_vomit_strong_abdominal_pain",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問7ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問7文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問8": {
+   "node": "22_ped_vomit_severe_headache",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問8ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問8文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問9": {
+   "node": "22_ped_vomit_bloody_stool",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問9ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問9文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問10": {
+   "node": "22_ped_vomit_distension",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問10ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問10文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問11": {
+   "node": "22_ped_vomit_no_tears",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問11ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問11文"
+  },
+  "小児の嘔気・嘔吐（16歳未満）_質問12": {
+   "node": "22_ped_vomit_abdominal_trauma",
+   "pair_col": "小児の嘔気・嘔吐（16歳未満）_質問12ペア",
+   "bun_col": "小児の嘔気・嘔吐（16歳未満）_質問12文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問1": {
+   "node": "23_ped_head_vomiting_repeated",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問1ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問1文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問2": {
+   "node": "23_ped_head_limb_weakness_numbness",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問2ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問2文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問3": {
+   "node": "23_ped_head_loss_of_consciousness",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問3ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問3文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問4": {
+   "node": "23_ped_head_headache",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問4ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問4文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問5": {
+   "node": "23_ped_head_nosebleed",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問5ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問5文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問6": {
+   "node": "23_ped_head_ear_bleeding_without_direct_hit",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問6ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問6文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問7": {
+   "node": "23_ped_head_bleeding_much",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問7ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問7文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問8": {
+   "node": "23_ped_head_neck_posture",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問8ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問8文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問9": {
+   "node": "23_ped_head_csf_leak",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問9ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問9文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問10": {
+   "node": "23_ped_head_dizziness",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問10ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問10文"
+  },
+  "小児の頭・頸部外傷（16歳未満）_質問11": {
+   "node": "23_ped_head_visual_disturbance",
+   "pair_col": "小児の頭・頸部外傷（16歳未満）_質問11ペア",
+   "bun_col": "小児の頭・頸部外傷（16歳未満）_質問11文"
+  }
+ }
+}
