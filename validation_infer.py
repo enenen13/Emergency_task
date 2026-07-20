@@ -26,8 +26,8 @@ def _load_json(rel):
 
 
 COLMAP = _load_json('transition_diagram/validation_column_map.json')['columns']   # base -> {node,pair_col,bun_col}
-NODE_Q_A = _load_json('transition_diagram/node_questions_A.json')['questions']
-NODE_Q_B = _load_json('transition_diagram/node_questions_B.json')['questions']
+NODE_Q_A = _load_json('dictionary/node_questions_A.json')['questions']
+NODE_Q_B = _load_json('dictionary/node_questions_B.json')['questions']
 
 _AGE_Q_RE = re.compile(r'(\d+)\s*[歳才]以上ですか')
 
