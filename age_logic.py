@@ -90,22 +90,35 @@ def eval_age_sex_gate(text: str, age: Any, sex: Optional[str] = None) -> Optiona
         return True
     a = parse_age(age)
     sx = (sex or '').strip()
-    # 性別つき複合（女性で N歳以上、男性 M歳以上）
-    fem = re.search(r'女性?で?\s*(\d+)\s*[歳才]以上', text)
-    male = re.search(r'男性?で?\s*(\d+)\s*[歳才]以上', text)
+    female = sx.startswith(('女', 'f', 'F'))
+    male_ = sx.startswith(('男', 'm', 'M'))
+    has_fem = ('女性' in text) or ('女の子' in text)
+    has_male = ('男性' in text) or ('男の子' in text)
+    # 性別つき複合（女性 N歳以上、男性 M歳以上）
+    fem = re.search(r'女性?[でがはの]?\s*(\d+)\s*[歳才]以上', text)
+    male = re.search(r'男性?[でがはの]?\s*(\d+)\s*[歳才]以上', text)
     if fem and male:
-        nf, nm = int(fem.group(1)), int(male.group(1))
         if a is None:
             return None
-        female = sx.startswith(('女', 'f', 'F'))
-        male_ = sx.startswith(('男', 'm', 'M'))
+        nf, nm = int(fem.group(1)), int(male.group(1))
         if female:
             return a >= nf
         if male_:
             return a >= nm
         # 性別不明 → どちらかを満たせば適用（安全側）
         return (a >= nf) or (a >= nm)
-    # 単純な「N才/歳以上」ゲート
+    # 片方の性別に限定（例:「女性が…の場合」なのに男性→非適用）
+    if has_fem and not has_male and male_:
+        return False
+    if has_male and not has_fem and female:
+        return False
+    # 年齢レンジ（N〜M歳）
+    rng = re.search(r'(\d+)\s*[〜～\-]\s*(\d+)\s*[歳才]', text)
+    if rng:
+        if a is None:
+            return None
+        return int(rng.group(1)) <= a <= int(rng.group(2))
+    # 単純な「N才/歳以上・未満」ゲート
     m = re.search(r'(\d+)\s*[歳才]以上', text)
     if m:
         return age_ge(a, int(m.group(1)))
@@ -172,3 +185,111 @@ def augment_answers_with_age(answers: Dict[str, str], age: Any, index: Dict[str,
         if ch is not None:
             out[nid] = ch          # 年齢が権威（上書き）
     return out
+
+
+# ===========================================================================
+# 統合リゾルバ（方針A）: age_flags の type 別に「年齢/性別で分岐をどう解くか」を計算
+#   ※ここでは純関数として実装（traverse への配線は方針B・後段）。
+# ===========================================================================
+import json as _json
+import os as _os
+
+_AGE_IN_TEXT = re.compile(r'(\d+)\s*[歳才](以上|未満|以下)')
+
+
+def load_age_flags(path: Optional[str] = None) -> Dict[str, dict]:
+    """dictionary/age_flags.json を読み込む（yaml から抽出済みの年齢関連フラグ）。"""
+    if path is None:
+        path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'dictionary', 'age_flags.json')
+    with open(path, encoding='utf-8') as f:
+        return _json.load(f)
+
+
+def _choice_code_from_model(node: dict, model_code: Any) -> Optional[str]:
+    """モデル code(0=該当なし,1..N) → yaml choice code。0/範囲外は None。"""
+    ch = node.get('choices', [])
+    if model_code is None or int(model_code) <= 0:
+        return None
+    i = int(model_code) - 1
+    return ch[i].get('code') if 0 <= i < len(ch) else None
+
+
+def _base_text_of(node: dict, model_code: Any) -> Optional[str]:
+    """モデル予測 code の choice text から年齢修飾を除いた基底（『はい・40歳以上』→『はい』）。"""
+    ch = node.get('choices', [])
+    if model_code is None or int(model_code) <= 0:
+        return None
+    i = int(model_code) - 1
+    if not (0 <= i < len(ch)):
+        return None
+    return re.split(r'[・,、]\s*\d+\s*[歳才]', str(ch[i].get('text', '')))[0].strip()
+
+
+def _pick_age_variant(choices: List[dict], base_text: str, age: Any) -> Optional[str]:
+    """『base_text・N歳以上/未満』の選択肢群から年齢に合う code を返す。無ければ None。"""
+    a = parse_age(age)
+    if a is None or not base_text:
+        return None
+    for c in choices:
+        t = str(c.get('text', ''))
+        if not t.startswith(base_text):
+            continue
+        m = _AGE_IN_TEXT.search(t)
+        if not m:
+            continue
+        n, op = int(m.group(1)), m.group(2)
+        ok = (a >= n) if op == '以上' else (a < n) if op == '未満' else (a <= n)
+        if ok:
+            return c.get('code')
+    return None
+
+
+def resolve_age_branch(node: dict, flag: dict, model_code: Any,
+                       age: Any, sex: Optional[str] = None) -> Dict[str, Any]:
+    """
+    年齢関連分岐を type 別に解決する（純関数）。
+      返り値: {applies, resolved_code, source, note}
+        applies       : この分岐が適用されるか（False=ゲート不成立でスキップ）
+        resolved_code : 最終 yaml choice code（該当なし/スキップは None）
+        source        : 'age' / 'age+model' / 'model' / 'gate'
+    """
+    types = flag.get('types', [])
+    choices = node.get('choices', [])
+
+    # 1) ゲート（年齢 / 年齢+性別）: 適用可否
+    if 'age_gate' in types or 'age_gate_text' in types or 'age_sex_gate' in types:
+        if 'age_sex_gate' in types:
+            applies = eval_age_sex_gate(node.get('question', ''), age, sex)
+        elif node.get('age_condition'):
+            applies = eval_age_condition(node['age_condition'], age)
+        else:
+            applies = eval_age_sex_gate(node.get('question', ''), age, sex)
+        if applies is False:
+            return {'applies': False, 'resolved_code': None, 'source': 'gate',
+                    'note': 'ゲート不成立→この分岐はスキップ（質問しない）'}
+        return {'applies': True, 'resolved_code': _choice_code_from_model(node, model_code),
+                'source': 'model', 'note': 'ゲート成立→モデル予測を採用'}
+
+    # 2) age_answer: 答えを年齢で決定（モデルを上書き）
+    if 'age_answer' in types:
+        ch = derive_age_choice(node, age)
+        return {'applies': True, 'resolved_code': ch, 'source': 'age',
+                'note': f'年齢で回答決定（{ch}）'}
+
+    # 3) age_choice_split: モデルの基底(例『はい』)を年齢で a-i/a-ii に分割
+    if 'age_choice_split' in types:
+        base = _base_text_of(node, model_code)
+        variant = _pick_age_variant(choices, base, age) if base else None
+        if variant:
+            return {'applies': True, 'resolved_code': variant, 'source': 'age+model',
+                    'note': f'モデル基底「{base}」を年齢で分割→{variant}'}
+        return {'applies': True, 'resolved_code': _choice_code_from_model(node, model_code),
+                'source': 'model', 'note': '年齢分割の対象外→モデル予測'}
+
+    return {'applies': True, 'resolved_code': _choice_code_from_model(node, model_code),
+            'source': 'model', 'note': 'そのまま'}
+
+
+def resolve_router_age(routes: List[dict], age: Any) -> List[str]:
+    """router_age: 年齢で適用可能な protocol id 一覧。"""
+    return applicable_protocols(routes, age)

@@ -1,0 +1,216 @@
+{
+ "age": {
+  "group": "entry",
+  "bert_node": null,
+  "types": [
+   "age_choice_split"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "choices": [
+    {
+     "code": "a",
+     "text": "①4歳以下（乳幼児）、②5-14歳（小児）、③15-39歳（青年）、④40-69歳（壮年）、⑤70歳以上（高齢）、⑥85歳以上（超高齢）"
+    }
+   ]
+  }
+ },
+ "common_cold_sweat_age_subquestion": {
+  "group": "common",
+  "bert_node": "00_common_cold_sweat",
+  "types": [
+   "age_answer",
+   "age_choice_split"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "threshold": 40,
+   "choices": [
+    {
+     "code": "i",
+     "text": "40歳以上"
+    },
+    {
+     "code": "ii",
+     "text": "40歳未満"
+    }
+   ]
+  }
+ },
+ "chief_complaint_router": {
+  "group": "router",
+  "bert_node": null,
+  "types": [
+   "router_age"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "routes": {
+    "adult_fever": "age >= 16",
+    "adult_nausea_vomiting": "age >= 16",
+    "trauma": "age >= 16 OR age unknown",
+    "pediatric_fever": "age < 16",
+    "pediatric_nausea_vomiting": "age < 16",
+    "pediatric_head_neck_trauma": "age < 16"
+   }
+  }
+ },
+ "palpitation_chest_pain": {
+  "group": "palpitation",
+  "bert_node": "03_chest_pain",
+  "types": [
+   "age_choice_split"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "choices": [
+    {
+     "code": "a-i",
+     "text": "はい・40歳以上"
+    },
+    {
+     "code": "a-ii",
+     "text": "はい・40歳未満"
+    }
+   ]
+  }
+ },
+ "syncope_age_40_subquestion": {
+  "group": "consciousness_disorder_syncope",
+  "bert_node": "04_age_40_subquestion",
+  "types": [
+   "age_answer"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "threshold": 40
+  }
+ },
+ "convulsion_pregnant": {
+  "group": "convulsion",
+  "bert_node": "05_pregnant",
+  "types": [
+   "age_sex_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": true,
+  "detail": {
+   "sex_age_text": "(女性で12～50才の場合) 妊娠していますか？"
+  }
+ },
+ "chest_age_40": {
+  "group": "chest_pain_nontraumatic",
+  "bert_node": "07_age_40",
+  "types": [
+   "age_answer"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "threshold": 40
+  }
+ },
+ "back_chest_pain_40": {
+  "group": "back_pain",
+  "bert_node": "08_chest_pain_40",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 40"
+  }
+ },
+ "back_presyncope_65": {
+  "group": "back_pain",
+  "bert_node": "08_presyncope_65",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 65"
+  }
+ },
+ "back_pain_quality_65": {
+  "group": "back_pain",
+  "bert_node": "08_pain_quality_65",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 65"
+  }
+ },
+ "lumbar_chest_pain_40": {
+  "group": "lumbar_pain",
+  "bert_node": "09_chest_pain_40",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 40"
+  }
+ },
+ "lumbar_presyncope_65": {
+  "group": "lumbar_pain",
+  "bert_node": "09_presyncope_65",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 65"
+  }
+ },
+ "lumbar_pain_quality_65": {
+  "group": "lumbar_pain",
+  "bert_node": "09_pain_quality_65",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 65"
+  }
+ },
+ "abd_presyncope_risk_age": {
+  "group": "abdominal_pain",
+  "bert_node": "11_presyncope_risk_age",
+  "types": [
+   "age_gate_text",
+   "age_sex_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": true,
+  "detail": {
+   "gate_text": "(女性で12歳以上の場合、男性65歳以上の場合)",
+   "sex_age_text": "(女性で12歳以上の場合、男性65歳以上の場合) 気を失いそうになりましたか？"
+  }
+ },
+ "abd_pain_quality_65": {
+  "group": "abdominal_pain",
+  "bert_node": "11_pain_quality_65",
+  "types": [
+   "age_gate"
+  ],
+  "needs_age": true,
+  "needs_sex": false,
+  "detail": {
+   "age_condition": "age >= 65"
+  }
+ }
+}

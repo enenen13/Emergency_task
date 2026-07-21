@@ -1,0 +1,71 @@
+{
+ "_meta": {
+  "purpose": "年齢/性別が関わる分岐の論理計算テスト（方針A: resolve_age_branch 単体検証）",
+  "yaml": "protocol_spreadsheet_aligned202607211237.yaml",
+  "note": "model_code = モデルの基底予測(0=該当なし,1..N)。resolve_age_branch(node, flag, model_code, age, sex) の結果を expected と照合。conversation は実モデル(MODE A)で使う会話B。"
+ },
+ "cases": [
+  {"node": "chest_age_40", "type": "age_answer",
+   "conversation": "胸の痛みはありますか？ はい、締め付けられるような痛みがあります。",
+   "model_code": 2, "age": 55, "sex": null,
+   "expect": {"applies": true, "resolved_code": "a"}, "why": "40歳以上→はい(a)。モデル値は無視され年齢で決定"},
+  {"node": "chest_age_40", "type": "age_answer",
+   "conversation": "胸の痛みはありますか？ はい、少し痛みます。",
+   "model_code": 1, "age": 30, "sex": null,
+   "expect": {"applies": true, "resolved_code": "b"}, "why": "40歳未満→いいえ(b)"},
+
+  {"node": "palpitation_chest_pain", "type": "age_choice_split",
+   "conversation": "胸に痛みはありますか？ はい、動悸とともに胸が痛みます。",
+   "model_code": 1, "age": 55, "sex": null,
+   "expect": {"applies": true, "resolved_code": "a-i"}, "why": "モデル基底『はい』を年齢で分割→40歳以上=a-i(R2)"},
+  {"node": "palpitation_chest_pain", "type": "age_choice_split",
+   "conversation": "胸に痛みはありますか？ はい、あります。",
+   "model_code": 1, "age": 30, "sex": null,
+   "expect": {"applies": true, "resolved_code": "a-ii"}, "why": "『はい』×40歳未満=a-ii(Y2)。年齢で triage が変わる核心例"},
+  {"node": "palpitation_chest_pain", "type": "age_choice_split",
+   "conversation": "胸に痛みはありますか？ いいえ、痛みはありません。",
+   "model_code": 3, "age": 55, "sex": null,
+   "expect": {"applies": true, "resolved_code": "b"}, "why": "『いいえ』は年齢分割の対象外→そのまま b"},
+
+  {"node": "back_pain_quality_65", "type": "age_gate",
+   "conversation": "どのような痛みですか？ 裂けるような激しい痛みです。",
+   "model_code": 1, "age": 70, "sex": null,
+   "expect": {"applies": true, "resolved_code": "a"}, "why": "65歳以上→ゲート成立→モデル予測(a)を採用"},
+  {"node": "back_pain_quality_65", "type": "age_gate",
+   "conversation": "どのような痛みですか？ 裂けるような痛みです。",
+   "model_code": 1, "age": 50, "sex": null,
+   "expect": {"applies": false, "resolved_code": null}, "why": "65歳未満→ゲート不成立→この分岐はスキップ（質問しない）"},
+
+  {"node": "convulsion_pregnant", "type": "age_sex_gate",
+   "conversation": "妊娠していますか？ はい、妊娠中です。",
+   "model_code": 1, "age": 30, "sex": "女", "sex_en": "female",
+   "expect": {"applies": true, "resolved_code": "a"}, "why": "女性で12〜50歳→ゲート成立→モデル予測を採用"},
+  {"node": "convulsion_pregnant", "type": "age_sex_gate",
+   "conversation": "妊娠していますか？ はい。",
+   "model_code": 1, "age": 30, "sex": "男", "sex_en": "male",
+   "expect": {"applies": false, "resolved_code": null}, "why": "男性→女性限定ゲート不成立→スキップ"},
+  {"node": "convulsion_pregnant", "type": "age_sex_gate",
+   "conversation": "妊娠していますか？ いいえ。",
+   "model_code": 2, "age": 60, "sex": "女", "sex_en": "female",
+   "expect": {"applies": false, "resolved_code": null}, "why": "女性でも60歳(>50)→レンジ外→スキップ"},
+
+  {"node": "abd_presyncope_risk_age", "type": "age_sex_gate",
+   "conversation": "気が遠くなりそうになりましたか？ はい、少しふらつきました。",
+   "model_code": 1, "age": 20, "sex": "女", "sex_en": "female",
+   "expect": {"applies": true, "resolved_code": "a"}, "why": "女性12歳以上→ゲート成立→モデル予測を採用"},
+  {"node": "abd_presyncope_risk_age", "type": "age_sex_gate",
+   "conversation": "気が遠くなりそうになりましたか？ はい。",
+   "model_code": 1, "age": 40, "sex": "男", "sex_en": "male",
+   "expect": {"applies": false, "resolved_code": null}, "why": "男性は65歳以上が条件→40歳は不成立→スキップ"},
+  {"node": "abd_presyncope_risk_age", "type": "age_sex_gate",
+   "conversation": "気が遠くなりそうになりましたか？ はい。",
+   "model_code": 1, "age": 70, "sex": "男", "sex_en": "male",
+   "expect": {"applies": true, "resolved_code": "a"}, "why": "男性65歳以上→ゲート成立"}
+ ],
+ "router_cases": [
+  {"node": "chief_complaint_router", "type": "router_age", "age": 20,
+   "expect_includes": ["adult_fever", "adult_nausea_vomiting"], "expect_excludes": ["pediatric_fever"], "why": "16歳以上→成人プロトコル"},
+  {"node": "chief_complaint_router", "type": "router_age", "age": 10,
+   "expect_includes": ["pediatric_fever", "pediatric_nausea_vomiting"], "expect_excludes": ["adult_fever"], "why": "16歳未満→小児プロトコル"}
+ ]
+}
