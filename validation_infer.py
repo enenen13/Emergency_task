@@ -5,7 +5,10 @@ verify07 で学習したモデル(A or B)を使い、`train/df_validation_input*
 ワイド形式（1行=1通報、各 `<症状>_質問N文`=質問A / `<症状>_質問Nペア`=会話B）を
 全ノード分推論して bert_pred(={node:code}) → ベクトルにする。
 
-・列→ノード対応は transition_diagram/validation_column_map.json（105列、文で解決済み）。
+・列形式は自動判定：
+    - renamed形式（推奨）：列名が yaml_node_id（例 'palpitation_heart_history'=質問文）＋
+      '<id>_pairs'（会話ペア）。NODE_MAP で yaml_node_id → BERTキーへ。
+    - 旧形式：'<症状>_質問N文' / '<症状>_質問Nペア'。transition_diagram/validation_column_map.json で解決。
 ・質問A: mode='A' は 文（=yaml質問）そのもの。mode='B' は node_questions_B の質問＋選択肢。
 ・年齢論理集合(機能1): 「N歳以上ですか？」ノードは年齢から code を上書き（数値: >=N→1(はい) / <N→2(いいえ) / 不明→モデル値のまま）。
   ※ Bタイプの router 年齢ゲートは、後段 vector_to_triage(vector, age) に age を渡すことで適用される。
@@ -17,6 +20,8 @@ from __future__ import annotations
 import os, re, json, csv
 from typing import Dict, List, Callable, Any, Optional
 
+import triage_pipeline as tp   # NODE_MAP（yaml_node_id -> BERTキー）を使う
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -25,7 +30,7 @@ def _load_json(rel):
         return json.load(f)
 
 
-COLMAP = _load_json('transition_diagram/validation_column_map.json')['columns']   # base -> {node,pair_col,bun_col}
+COLMAP = _load_json('transition_diagram/validation_column_map.json')['columns']   # 旧形式: base -> {node,pair_col,bun_col}
 NODE_Q_A = _load_json('dictionary/node_questions_A.json')['questions']
 NODE_Q_B = _load_json('dictionary/node_questions_B.json')['questions']
 
@@ -50,20 +55,39 @@ def prompt_for(node: str, bun: str, mode: str) -> str:
     return bun or NODE_Q_A.get(node, {}).get('question', '')
 
 
+def _uses_nodeid_columns(fieldnames) -> bool:
+    """renamed形式（列名=yaml_node_id と '<id>_pairs'）かどうかを判定。"""
+    fs = set(fieldnames or [])
+    return any((y in fs) and (f'{y}_pairs' in fs) for y in tp.NODE_MAP)
+
+
+def _iter_cols(row):
+    """(yaml_node, bert_node, bun_col, pair_col) を列挙。
+       renamed形式（列名=yaml_node_id）優先、無ければ旧COLMAP形式。"""
+    if _uses_nodeid_columns(row.keys()):
+        for yaml_node, bert_node in tp.NODE_MAP.items():
+            pair_col = f'{yaml_node}_pairs'
+            if pair_col in row:                      # CSVにその列がある分だけ
+                yield yaml_node, bert_node, yaml_node, pair_col
+    else:
+        for base, info in COLMAP.items():
+            yield base, info['node'], info['bun_col'], info['pair_col']
+
+
 def infer_row(row: Dict[str, str],
               predict_fn: Callable[[str, str], int],
               mode: str = 'A') -> Dict[str, Any]:
-    """検証CSVの1行 → {age, bert_pred, diagnostics}。predict_fn(A,B)->code。"""
+    """検証CSVの1行 → {age, bert_pred, diagnostics}。predict_fn(A,B)->code。
+       列形式は自動判定: renamed（列名=yaml_node_id / '<id>_pairs'）優先、無ければ旧 症状_質問N。"""
     age = row.get('年齢')
     age_n = _age_num(age)
     bert_pred: Dict[str, int] = {}
     diag: List[Dict[str, Any]] = []
-    for base, info in COLMAP.items():
-        node = info['node']
-        bun = str(row.get(info['bun_col'], '') or '').strip()
-        pair = str(row.get(info['pair_col'], '') or '').strip()
+    for col_id, node, bun_col, pair_col in _iter_cols(row):
+        bun = str(row.get(bun_col, '') or '').strip()
+        pair = str(row.get(pair_col, '') or '').strip()
         if not pair:
-            continue                       # その症状の列が空（＝聞いていない）→スキップ
+            continue                       # その質問の列が空（＝聞いていない）→スキップ
         A = prompt_for(node, bun, mode)
         code = int(predict_fn(A, pair))
         src = 'model'
@@ -73,7 +97,7 @@ def infer_row(row: Dict[str, str],
             code = 1 if age_n >= int(m.group(1)) else 2      # 1=はい/以上, 2=いいえ/未満
             src = 'age_logic'
         bert_pred[node] = code
-        diag.append({'col': base, 'node': node, 'code': code, 'src': src})
+        diag.append({'col': col_id, 'node': node, 'code': code, 'src': src})
     return {'id': row.get('id'), 'age': age, 'bert_pred': bert_pred, 'diagnostics': diag}
 
 
