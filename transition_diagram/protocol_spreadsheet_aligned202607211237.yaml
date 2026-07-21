@@ -2343,15 +2343,11 @@ protocols:
       value: unknown
       text: 不明
       triage: R3
-      accumulate_triage: true
-      action: next
-      next: numbness_stroke_history
-      note: 通報者が本人の症状を確認できないケース。生成データ code 9 に対応。状況不明のため R3（確認要・本yamlの不明→R3 慣例に準拠）。
   - id: numbness_stroke_history
     question: いままでに脳卒中になったことがありますか？
     choices:
     - code: a
-      code_labael: 1
+      code_label: 1
       value: 'yes'
       text: はい
       triage: Y1
@@ -2607,8 +2603,14 @@ protocols:
       route_to_protocol: lumbar_pain
     - code: f
       code_label: 6
+      value: 'no'
+      text: いいえ
+      triage: Y2
+    - code: g
+      code_label: 7
       value: unknown
       text: 不明
+      pdf_cell_blank: true
       triage: R3
   - id: malaise_weakness
     question: 急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？

@@ -1,1080 +1,336 @@
 {
  "_meta": {
-  "purpose": "verify07 A(選択肢なし)用 ノード->yaml質問 辞書",
-  "data": "07_21",
+  "purpose": "A(質問のみ)",
+  "yaml": "protocol_spreadsheet_aligned202607211237.yaml",
   "n_nodes": 109
  },
  "questions": {
-  "00_overview": {
-   "question": "どなたが、どうしましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "<キーワード> 呼吸なし・脈なし・水没・冷たく・首をつった・首を絞めた",
-    "（キーワードなしで）外因性・外傷（交通外傷、転落、熱傷、咬傷など）",
-    "（キーワードなしで）けいれん",
-    "主訴の分類（胸が痛い、背中が痛いなど）",
-    "不明"
-   ],
-   "n_yaml_choices": 5
-  },
-  "00_observation": {
-   "question": "今、直接、患者をみることができますか？（目の前にいますか？など）",
-   "source": "yaml",
-   "yaml_choices": [
-    "容態を観察している・観察した",
-    "容態を観察していないし、観察できない"
-   ],
-   "n_yaml_choices": 2
-  },
   "00_common_breathing": {
-   "question": "呼吸は楽にしていますか？普段通りの呼吸ですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ（呼吸なし）",
-    "いいえ（死戦期呼吸を疑う）",
-    "いいえ（いびき）",
-    "いいえ（窒息）",
-    "呼吸が苦しそう",
-    "不明"
-   ],
-   "n_yaml_choices": 7
+   "question": "呼吸は楽にしていますか？普段通りの呼吸ですか？"
   },
   "00_common_cold_sweat": {
-   "question": "冷や汗をかいていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "00_common_face_color": {
-   "question": "顔色は悪いですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "悪い",
-    "悪くない（いつもと同じ、赤色）",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "40歳以上ですか？"
   },
   "00_common_conversation": {
-   "question": "普通に話しができますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ（つじつまが合わない）",
-    "いいえ（単語しか話せない）",
-    "いいえ（うめき声のみ）",
-    "いいえ（声が全く出ない）",
-    "いいえ（内容不明）",
-    "いいえ（意識は問題がないが、呼吸苦で話しができない）途切れ途切れの会話",
-    "不明"
-   ],
-   "n_yaml_choices": 8
+   "question": "普通に話しができますか？"
   },
-  "03_heart_history": {
-   "question": "これまで心臓の異常を指摘されたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "00_common_face_color": {
+   "question": "顔色は悪いですか？"
   },
-  "03_icd_fired": {
-   "question": "30分以内に体内式埋め込み型除細動器は、発動しましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "00_observation": {
+   "question": "今、直接、患者をみることができますか？（目の前にいますか？など）"
+  },
+  "00_overview": {
+   "question": "どなたが、どうしましたか？"
   },
   "03_chest_pain": {
-   "question": "胸痛はありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい・40歳以上",
-    "はい・40歳未満",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 4
+   "question": "胸痛はありますか？"
   },
-  "04_breath_count": {
-   "question": "それでは、今から傷病者をみて、呼吸をする度に私に合図してください。",
-   "source": "yaml",
-   "yaml_choices": [
-    "10秒以上（死戦期呼吸）",
-    "10秒未満",
-    "実施できず"
-   ],
-   "n_yaml_choices": 3
+  "03_heart_history": {
+   "question": "これまで心臓の異常を指摘されたことがありますか？"
   },
-  "04_heart_history": {
-   "question": "これまで心臓の異常を指摘されたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "03_icd_fired": {
+   "question": "30分以内に体内式埋め込み型除細動器は、発動しましたか？"
   },
   "04_abdominal_pain": {
-   "question": "お腹を痛がっていますか（したか）？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "お腹を痛がっていますか（したか）？"
   },
-  "05_scope": {
-   "question": "痙攣しているのは全身ですか。それとも、体の一部ですか。",
-   "source": "yaml",
-   "yaml_choices": [
-    "全身性",
-    "局所性"
-   ],
-   "n_yaml_choices": 2
+  "04_breath_count": {
+   "question": "それでは、今から傷病者をみて、呼吸をする度に私に合図してください。"
   },
-  "05_continues": {
-   "question": "けいれんは続いていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "05_common_breathing": {
-   "question": "呼吸は楽にしていますか？普段通りの呼吸ですか？",
-   "source": "common_norm",
-   "yaml_choices": [
-    "はい",
-    "いいえ（呼吸なし）",
-    "いいえ（死戦期呼吸を疑う）",
-    "いいえ（いびき）",
-    "いいえ（窒息）",
-    "呼吸が苦しそう",
-    "不明"
-   ],
-   "n_yaml_choices": 7
-  },
-  "05_common_cold_sweat": {
-   "question": "冷や汗をかいていますか？",
-   "source": "common_norm",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "05_common_face_color": {
-   "question": "顔色は悪いですか？",
-   "source": "common_norm",
-   "yaml_choices": [
-    "悪い",
-    "悪くない（いつもと同じ、赤色）",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "05_common_conversation": {
-   "question": "普通に話しができますか？",
-   "source": "common_norm",
-   "yaml_choices": [
-    "はい",
-    "いいえ（つじつまが合わない）",
-    "いいえ（単語しか話せない）",
-    "いいえ（うめき声のみ）",
-    "いいえ（声が全く出ない）",
-    "いいえ（内容不明）",
-    "いいえ（意識は問題がないが、呼吸苦で話しができない）途切れ途切れの会話",
-    "不明"
-   ],
-   "n_yaml_choices": 8
+  "04_heart_history": {
+   "question": "これまで心臓の異常を指摘されたことがありますか？"
   },
   "05_breath_signal": {
-   "question": "それでは、今から傷病者をみて、呼吸をする度に私に合図してください。",
-   "source": "yaml",
-   "yaml_choices": [
-    "10秒以上（死戦期呼吸）",
-    "10秒未満",
-    "実施できず"
-   ],
-   "n_yaml_choices": 3
+   "question": "それでは、今から傷病者をみて、呼吸をする度に私に合図してください。"
   },
-  "05_pregnant": {
-   "question": "妊娠していますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "05_common_breathing": {
+   "question": "呼吸は楽にしていますか？普段通りの呼吸ですか？"
+  },
+  "05_common_cold_sweat": {
+   "question": "冷や汗をかいていますか？"
+  },
+  "05_common_conversation": {
+   "question": "普通に話しができますか？"
+  },
+  "05_common_face_color": {
+   "question": "顔色は悪いですか？"
+  },
+  "05_continues": {
+   "question": "けいれんは続いていますか？"
   },
   "05_diabetes": {
-   "question": "糖尿病と言われたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "糖尿病と言われたことがありますか？"
   },
   "05_predicted": {
-   "question": "まだ痙攣が起きていないが、今後起きる感じがするのですね？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "まだ痙攣が起きていないが、今後起きる感じがするのですね？"
   },
-  "06_headache_sudden_severe": {
-   "question": "激しい痛みが、突然起こりましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "05_pregnant": {
+   "question": "妊娠していますか？"
   },
-  "06_headache_numbness_paralysis": {
-   "question": "しびれや麻痺がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "05_scope": {
+   "question": "痙攣しているのは全身ですか。それとも、体の一部ですか。"
   },
   "06_headache_abnormal_behavior": {
-   "question": "何か、いつもと違う振る舞いがありますか？（発症から3時間以内）",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "何か、いつもと違う振る舞いがありますか？（発症から3時間以内）"
   },
-  "07_nausea_vomiting": {
-   "question": "吐いたり、吐き気がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "06_headache_numbness_paralysis": {
+   "question": "しびれや麻痺がありますか？"
   },
-  "07_mi_angina_history": {
-   "question": "これまで、心筋梗塞や狭心症と言われたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "07_recurrent_pain": {
-   "question": "これまで、同様の痛みが何度かありましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "06_headache_sudden_severe": {
+   "question": "激しい痛みが、突然起こりましたか？"
   },
   "07_age_40": {
-   "question": "40歳以上ですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "40歳以上ですか？"
   },
-  "08_trauma": {
-   "question": "体をぶつけたり、高いところから落ちたりしましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "外傷性",
-    "非外傷性"
-   ],
-   "n_yaml_choices": 2
+  "07_mi_angina_history": {
+   "question": "これまで、心筋梗塞や狭心症と言われたことがありますか？"
   },
-  "08_dyspnea_recheck": {
-   "question": "再度確認しますが、息苦しくないですか？、呼吸が苦しそうですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "07_nausea_vomiting": {
+   "question": "吐いたり、吐き気がありますか？"
   },
-  "08_chest_pain_40": {
-   "question": "胸は痛くないですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "07_recurrent_pain": {
+   "question": "これまで、同様の痛みが何度かありましたか？"
   },
   "08_aortic_aneurysm_history": {
-   "question": "これまでに大動脈瘤などを指摘されたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "これまでに大動脈瘤などを指摘されたことがありますか？"
   },
-  "08_presyncope_65": {
-   "question": "気を失いそうになりましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "08_chest_pain_40": {
+   "question": "胸は痛くないですか？"
+  },
+  "08_dyspnea_recheck": {
+   "question": "再度確認しますが、息苦しくないですか？、呼吸が苦しそうですか？"
   },
   "08_pain_quality_65": {
-   "question": "どのような痛みか教えてください",
-   "source": "yaml",
-   "yaml_choices": [
-    "さけるような痛み",
-    "移動する（上から下に、胸部から腹部に、背中(後ろ)から前(胸部)になど）",
-    "その他の痛み"
-   ],
-   "n_yaml_choices": 3
+   "question": "どのような痛みか教えてください"
   },
-  "09_trauma": {
-   "question": "体をぶつけたり、高いところから落ちたりしましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "外傷性",
-    "非外傷性"
-   ],
-   "n_yaml_choices": 2
+  "08_presyncope_65": {
+   "question": "気を失いそうになりましたか？"
   },
-  "09_dyspnea_recheck": {
-   "question": "再度確認しますが、息苦しくないですか？、呼吸が苦しそうですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "09_chest_pain_40": {
-   "question": "胸は痛くないですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "08_trauma": {
+   "question": "体をぶつけたり、高いところから落ちたりしましたか？"
   },
   "09_aortic_aneurysm_history": {
-   "question": "これまでに大動脈瘤などを指摘されたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "これまでに大動脈瘤などを指摘されたことがありますか？"
   },
-  "09_presyncope_65": {
-   "question": "気を失いそうになりましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "09_chest_pain_40": {
+   "question": "胸は痛くないですか？"
+  },
+  "09_dyspnea_recheck": {
+   "question": "再度確認しますが、息苦しくないですか？、呼吸が苦しそうですか？"
   },
   "09_pain_quality_65": {
-   "question": "どのような痛みか教えてください",
-   "source": "yaml",
-   "yaml_choices": [
-    "さけるような痛み",
-    "移動する（上から下に、胸部から腹部に、背中(後ろ)から前(胸部)になど）",
-    "その他の痛み"
-   ],
-   "n_yaml_choices": 3
+   "question": "どのような痛みか教えてください"
+  },
+  "09_presyncope_65": {
+   "question": "気を失いそうになりましたか？"
+  },
+  "09_trauma": {
+   "question": "体をぶつけたり、高いところから落ちたりしましたか？"
   },
   "10_cannot_situp": {
-   "question": "起き上がることができませんか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "10_headache_vomit": {
-   "question": "強い頭痛と嘔吐がともにありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "10_heat_exposure": {
-   "question": "暑い所にしばらくいましたか？または、激しい運動をした後ですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "起き上がることができませんか？"
   },
   "10_headache_consciousness": {
-   "question": "頭痛があり、意識がもうろうとしていますか？または、意識状態が悪いですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "頭痛があり、意識がもうろうとしていますか？または、意識状態が悪いですか？"
   },
-  "11_aortic_aneurysm_history": {
-   "question": "これまでに大動脈瘤などを指摘されたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "10_headache_vomit": {
+   "question": "強い頭痛と嘔吐がともにありますか？"
   },
-  "11_presyncope_risk_age": {
-   "question": "気を失いそうになりましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "10_heat_exposure": {
+   "question": "暑い所にしばらくいましたか？または、激しい運動をした後ですか？"
   },
   "11_above_navel": {
-   "question": "臍より上の痛みですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "臍より上の痛みですか？"
+  },
+  "11_aortic_aneurysm_history": {
+   "question": "これまでに大動脈瘤などを指摘されたことがありますか？"
   },
   "11_pain_quality_65": {
-   "question": "どのような痛みか教えてください",
-   "source": "yaml",
-   "yaml_choices": [
-    "さけるような痛み",
-    "移動する（上から下に、胸部から腹部に、背中(後ろ)から前(胸部)になど）",
-    "その他の痛み"
-   ],
-   "n_yaml_choices": 3
+   "question": "どのような痛みか教えてください"
   },
-  "12_vomit_blood": {
-   "question": "吐いたものに血は混じっていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "11_presyncope_risk_age": {
+   "question": "気を失いそうになりましたか？"
   },
   "12_vomit_2days": {
-   "question": "強い吐き気、または嘔吐が2日以上続いていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "12_vomit_strong_abdominal_pain": {
-   "question": "強いお腹の痛みがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "強い吐き気、または嘔吐が2日以上続いていますか？"
   },
   "12_vomit_abdominal_distension": {
-   "question": "お腹がパンパンに張っていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "お腹がパンパンに張っていますか？"
+  },
+  "12_vomit_blood": {
+   "question": "吐いたものに血は混じっていますか？"
   },
   "12_vomit_chest_back_pain": {
-   "question": "胸、または背中の痛みはありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "胸、または背中の痛みはありますか？"
   },
   "12_vomit_recent_trauma": {
-   "question": "ごく最近、頭・胸・腹に怪我をしたり、大きな力を受けたりしましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "ごく最近、頭・胸・腹に怪我をしたり、大きな力を受けたりしましたか？"
+  },
+  "12_vomit_strong_abdominal_pain": {
+   "question": "強いお腹の痛みがありますか？"
   },
   "12_vomit_strong_headache": {
-   "question": "強い頭痛は伴っていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_cannot_move": {
-   "question": "動けませんか？または、歩行や移動ができませんか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_weakness": {
-   "question": "急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_diarrhea_vomiting": {
-   "question": "下痢または嘔吐をしていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_nausea": {
-   "question": "吐き気がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_speech_difficulty": {
-   "question": "しゃべりにくいですか？または、しゃべりにくそうですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_hypertension": {
-   "question": "高血圧の治療中ですか？または、高血圧と言われたことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "13_dizzy_visual_disturbance": {
-   "question": "目が見えにくいですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "強い頭痛は伴っていますか？"
   },
   "13_dizzy_arrhythmia": {
-   "question": "脈が極端に速かったり遅かったり、乱れたり、ドキドキしますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "脈が極端に速かったり遅かったり、乱れたり、ドキドキしますか？"
+  },
+  "13_dizzy_cannot_move": {
+   "question": "動けませんか？または、歩行や移動ができませんか？"
   },
   "13_dizzy_chest_pain": {
-   "question": "胸の痛みがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "胸の痛みがありますか？"
   },
-  "13_dizzy_severe": {
-   "question": "めまいの症状はひどいですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "13_dizzy_diarrhea_vomiting": {
+   "question": "下痢または嘔吐をしていますか？"
   },
   "13_dizzy_headache": {
-   "question": "頭痛がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "頭痛がありますか？"
   },
-  "14_numbness_stroke_symptoms": {
-   "question": "以下の症状がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "急な構音障害",
-    "急な脱力または、しびれ（片側のみ）",
-    "急な麻痺または、顔面の左右差（片側のみ）",
-    "急なバランス感覚の欠如（ふらつきなど）",
-    "急な視覚障害",
-    "突然の頭痛",
-    "その他"
-   ],
-   "n_yaml_choices": 7
+  "13_dizzy_hypertension": {
+   "question": "高血圧の治療中ですか？または、高血圧と言われたことがありますか？"
+  },
+  "13_dizzy_nausea": {
+   "question": "吐き気がありますか？"
+  },
+  "13_dizzy_severe": {
+   "question": "めまいの症状はひどいですか？"
+  },
+  "13_dizzy_speech_difficulty": {
+   "question": "しゃべりにくいですか？または、しゃべりにくそうですか？"
+  },
+  "13_dizzy_visual_disturbance": {
+   "question": "目が見えにくいですか？"
+  },
+  "13_dizzy_weakness": {
+   "question": "急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？"
   },
   "14_numbness_stroke_history": {
-   "question": "いままでに脳卒中になったことがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "いままでに脳卒中になったことがありますか？"
+  },
+  "14_numbness_stroke_symptoms": {
+   "question": "以下の症状がありますか？"
   },
   "15_hematemesis_amount": {
-   "question": "どれくらい出血していますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "容器（ティッシュペーパー）に血液が付着する程度",
-    "上記以上に出血している",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "どれくらい出血していますか？"
   },
   "15_hematemesis_chest_or_abdominal_pain": {
-   "question": "胸痛あるいは腹痛はありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "16_melena_amount": {
-   "question": "どれくらい出血していますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "下着に血液が付着する程度",
-    "上記以上に出血している",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "胸痛あるいは腹痛はありますか？"
   },
   "16_melena_abdominal_pain": {
-   "question": "腹痛はありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "腹痛はありますか？"
   },
-  "17_malaise_pain_anywhere": {
-   "question": "どこか痛いところがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい（頭痛、胸痛、背部痛、腹痛、腰部痛）",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "17_malaise_pain_location": {
-   "question": "それはどこですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "頭",
-    "胸",
-    "背部痛",
-    "腹痛",
-    "腰部痛",
-    "不明"
-   ],
-   "n_yaml_choices": 6
-  },
-  "17_malaise_weakness": {
-   "question": "急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "17_malaise_speech": {
-   "question": "しゃべりにくいですか？または、しゃべりにくそうですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+  "16_melena_amount": {
+   "question": "どれくらい出血していますか？"
   },
   "17_malaise_diarrhea_vomiting": {
-   "question": "下痢または嘔吐をしていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "下痢または嘔吐をしていますか？"
+  },
+  "17_malaise_pain_anywhere": {
+   "question": "どこか痛いところがありますか？"
+  },
+  "17_malaise_pain_location": {
+   "question": "それはどこですか？"
+  },
+  "17_malaise_speech": {
+   "question": "しゃべりにくいですか？または、しゃべりにくそうですか？"
+  },
+  "17_malaise_weakness": {
+   "question": "急に手足の力が抜けた感じ、または、手足の動きにくさがありますか？"
   },
   "18_trauma_bleeding": {
-   "question": "どこからか出血していますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "どこからか出血していますか？"
   },
   "18_trauma_type": {
-   "question": "どんな外傷ですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "3m以上の高さからの転落、墜落、滑落",
-    "自動車事故：車体の横転、乗員の車外放出や車内閉じ込め、同乗者の死亡、高速道路上の事故、転落など",
-    "高速での自動二輪車事故",
-    "歩行者、自転車及び自動二輪者対自動車事故",
-    "鉄道車両との接触事故",
-    "頭頸部や体幹部の鋭的外傷（刺された、撃たれた）",
-    "四肢の切断および不全切断（手関節・足関節より近位のもの）",
-    "救出に時間を要する（概ね20分以上）事故など",
-    "機械に巻き込まれた、挟まれた、重量物の下敷きになった、ぶつかった",
-    "爆発、列車・飛行機・バスなどの多数傷病者の発生が予想される事故",
-    "上記以外で医師の現場派遣が望ましい事故",
-    "指趾切断",
-    "指趾の切創（切断を除く）",
-    "手足の小範囲の熱傷",
-    "手足の捻挫で、痛みが我慢できるもの",
-    "手足の打撲・擦過傷で歩行が可能であるもの",
-    "上記以外"
-   ],
-   "n_yaml_choices": 17
+   "question": "どんな外傷ですか？"
   },
   "19_foreign_body_speak_cry": {
-   "question": "再度確認しますが、話す（泣く）ことはできますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
+   "question": "再度確認しますが、話す（泣く）ことはできますか？"
   },
   "20_poisoning_speak_cry": {
-   "question": "再度確認しますが、話す（泣く）ことはできますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ",
-    "不明"
-   ],
-   "n_yaml_choices": 3
-  },
-  "21_ped_fever_consciousness": {
-   "question": "意識がもうろうとしていますか？〔または〕おかしなことを口走っていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "21_ped_fever_drowsy": {
-   "question": "1日中ウトウトしていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "再度確認しますが、話す（泣く）ことはできますか？"
   },
   "21_ped_fever_agitated": {
-   "question": "興奮していますか？〔または〕あばれていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "興奮していますか？〔または〕あばれていますか？"
+  },
+  "21_ped_fever_consciousness": {
+   "question": "意識がもうろうとしていますか？〔または〕おかしなことを口走っていますか？"
+  },
+  "21_ped_fever_drowsy": {
+   "question": "1日中ウトウトしていますか？"
   },
   "21_ped_fever_severe_headache": {
-   "question": "ひどい頭痛がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_repeated": {
-   "question": "嘔吐を何度も繰り返していますか？（回数の目安：6回以上、または、吐物中に食物残渣がみられなくなっても2~3回以上嘔吐を繰り返している）",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_blood_bile": {
-   "question": "吐いたものに血〔または〕胆汁（緑がかった液体）が混じっていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_fever": {
-   "question": "発熱（38.0℃以上）はありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_no_urine": {
-   "question": "尿が半日以上でていませんか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_lethargic": {
-   "question": "無表情でウトウトしていますか？〔または〕元気なくぐったりとしていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_infant_projectile": {
-   "question": "ミルク摂取後に、3~4回以上噴出する嘔吐がみられましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_strong_abdominal_pain": {
-   "question": "強い腹痛がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_severe_headache": {
-   "question": "頭を激しく痛がっていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_bloody_stool": {
-   "question": "便に血液またはイチゴゼリー様のものが混じっていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_distension": {
-   "question": "お腹がパンパンに張っていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "22_ped_vomit_no_tears": {
-   "question": "泣いても涙がほとんど出ないですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "ひどい頭痛がありますか？"
   },
   "22_ped_vomit_abdominal_trauma": {
-   "question": "お腹を強く打ちましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "お腹を強く打ちましたか？"
   },
-  "23_ped_head_vomiting_repeated": {
-   "question": "数回にわたる嘔吐がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "22_ped_vomit_blood_bile": {
+   "question": "吐いたものに血〔または〕胆汁（緑がかった液体）が混じっていますか？"
   },
-  "23_ped_head_limb_weakness_numbness": {
-   "question": "手足で動きにくいところ、または、しびれがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "22_ped_vomit_bloody_stool": {
+   "question": "便に血液またはイチゴゼリー様のものが混じっていますか？"
   },
-  "23_ped_head_loss_of_consciousness": {
-   "question": "受傷後または受傷時に意識消失がありましたか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "22_ped_vomit_distension": {
+   "question": "お腹がパンパンに張っていますか？"
   },
-  "23_ped_head_headache": {
-   "question": "意識はしっかりしており、頭痛を訴えていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "22_ped_vomit_fever": {
+   "question": "発熱（38.0℃以上）はありますか？"
   },
-  "23_ped_head_nosebleed": {
-   "question": "押さえても、鼻血が止まらないですか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "22_ped_vomit_infant_projectile": {
+   "question": "ミルク摂取後に、3~4回以上噴出する嘔吐がみられましたか？"
   },
-  "23_ped_head_ear_bleeding_without_direct_hit": {
-   "question": "直接ぶつけていないのに耳出血がありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+  "22_ped_vomit_lethargic": {
+   "question": "無表情でウトウトしていますか？〔または〕元気なくぐったりとしていますか？"
+  },
+  "22_ped_vomit_no_tears": {
+   "question": "泣いても涙がほとんど出ないですか？"
+  },
+  "22_ped_vomit_no_urine": {
+   "question": "尿が半日以上でていませんか？"
+  },
+  "22_ped_vomit_repeated": {
+   "question": "嘔吐を何度も繰り返していますか？（回数の目安：6回以上、または、吐物中に食物残渣がみられなくなっても2~3回以上嘔吐を繰り返している）"
+  },
+  "22_ped_vomit_severe_headache": {
+   "question": "頭を激しく痛がっていますか？"
+  },
+  "22_ped_vomit_strong_abdominal_pain": {
+   "question": "強い腹痛がありますか？"
   },
   "23_ped_head_bleeding_much": {
-   "question": "頭からの出血が多いですか（押さえても止まらないですか）？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
-  },
-  "23_ped_head_neck_posture": {
-   "question": "首をかしげる姿勢をとっていますか？または、まっすぐ体を向かせても横を向いていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "頭からの出血が多いですか（押さえても止まらないですか）？"
   },
   "23_ped_head_csf_leak": {
-   "question": "サラサラした液体（髄液の可能性）が鼻、または、耳からポタポタと出ていますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "サラサラした液体（髄液の可能性）が鼻、または、耳からポタポタと出ていますか？"
   },
   "23_ped_head_dizziness": {
-   "question": "めまいがありますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "めまいがありますか？"
+  },
+  "23_ped_head_ear_bleeding_without_direct_hit": {
+   "question": "直接ぶつけていないのに耳出血がありますか？"
+  },
+  "23_ped_head_headache": {
+   "question": "意識はしっかりしており、頭痛を訴えていますか？"
+  },
+  "23_ped_head_limb_weakness_numbness": {
+   "question": "手足で動きにくいところ、または、しびれがありますか？"
+  },
+  "23_ped_head_loss_of_consciousness": {
+   "question": "受傷後または受傷時に意識消失がありましたか？"
+  },
+  "23_ped_head_neck_posture": {
+   "question": "首をかしげる姿勢をとっていますか？または、まっすぐ体を向かせても横を向いていますか？"
+  },
+  "23_ped_head_nosebleed": {
+   "question": "押さえても、鼻血が止まらないですか？"
   },
   "23_ped_head_visual_disturbance": {
-   "question": "眼が見えにくかったり、ものが二重に見えたりしますか？",
-   "source": "yaml",
-   "yaml_choices": [
-    "はい",
-    "いいえ"
-   ],
-   "n_yaml_choices": 2
+   "question": "眼が見えにくかったり、ものが二重に見えたりしますか？"
+  },
+  "23_ped_head_vomiting_repeated": {
+   "question": "数回にわたる嘔吐がありますか？"
   }
  }
 }
