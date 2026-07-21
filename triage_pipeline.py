@@ -120,12 +120,21 @@ def load_graph(path: str = None) -> ProtocolGraph:
 _LETTERS = 'abcdefghij'
 
 
-def bert_code_to_choice(code: int) -> Optional[str]:
-    """BERTの分類 code(0..N) を yaml の choice code('a','b',…) へ。
-    0=非該当 → None（＝回答なし＝その質問では辺を選べない＝途切れ要因）。"""
+def bert_code_to_choice(code: int, node: Optional[dict] = None) -> Optional[str]:
+    """BERTの分類 code(0..N) を yaml の choice code へ。
+    0=非該当 → None（＝回答なし＝その質問では辺を選べない＝途切れ要因）。
+
+    ★ 学習ラベル規約: code=k は「そのノードの choices の k番目」（node_questions の
+       yaml_choices 順＝yaml choices 順）。したがって node（yamlノードdict）を渡せば
+       choices[k-1] の“実コード”を返すのが正しい（例: overview の 4番目='chief_complaint_classification'、
+       palpitation の 3番目='b' 等、a,b,c…の連番でないノードでも正しく対応）。
+    node 省略時のみ後方互換で 'a','b',… の位置レター変換にフォールバックする。"""
     if code is None or int(code) <= 0:
         return None
     idx = int(code) - 1
+    if node is not None and 'choices' in node:
+        choices = node['choices']
+        return str(choices[idx]['code']) if 0 <= idx < len(choices) else None
     return _LETTERS[idx] if idx < len(_LETTERS) else None
 
 
@@ -149,15 +158,44 @@ def _load_node_map(path: str = None) -> Dict[str, str]:
 NODE_MAP.update(_load_node_map())
 
 
-def build_answers_from_bert(bert_pred: Dict[str, int]) -> Dict[str, str]:
+_AGE_FLAGS_CACHE = None
+
+
+def _age_flags() -> Dict[str, dict]:
+    """dictionary/age_flags.json を1回だけ読み込む（無ければ空）。"""
+    global _AGE_FLAGS_CACHE
+    if _AGE_FLAGS_CACHE is None:
+        try:
+            _AGE_FLAGS_CACHE = age_logic.load_age_flags() if age_logic is not None else {}
+        except Exception:
+            _AGE_FLAGS_CACHE = {}
+    return _AGE_FLAGS_CACHE
+
+
+def build_answers_from_bert(bert_pred: Dict[str, int],
+                            graph: Optional['ProtocolGraph'] = None,
+                            age: Any = None,
+                            sex: Optional[str] = None) -> Dict[str, str]:
     """BERT予測 {bert_node: code} を yaml探索用 {yaml_node_id: choice} へ変換する。
     NODE_MAP を yaml→bert 方向で走査するので、1つのBERTノードが複数のyamlノードに
-    対応していても（例 00_common_cold_sweat → cold_sweat と age_subquestion）両方に配れる。"""
+    対応していても（例 00_common_cold_sweat → cold_sweat と age_subquestion）両方に配れる。
+    ★ graph を渡すと各yamlノードの choices を使って code→実コードを正しく対応させる
+       （a,b,c…連番でないノードのズレを解消）。graph 省略時は位置レター変換にフォールバック。"""
+    flags = _age_flags()
     out: Dict[str, str] = {}
     for yaml_node, bert_node in NODE_MAP.items():
         if bert_node not in bert_pred:
             continue
-        ch = bert_code_to_choice(bert_pred[bert_node])
+        node = graph.node(yaml_node) if graph is not None else None
+        code = bert_pred[bert_node]
+        # 年齢/性別が関わる分岐は resolve_age_branch で論理計算（方針B: triage時に適用）
+        if node is not None and age_logic is not None and yaml_node in flags:
+            res = age_logic.resolve_age_branch(node, flags[yaml_node], code, age, sex)
+            if not res.get('applies', True):
+                continue                       # ゲート不成立 → この分岐はスキップ（回答なし）
+            ch = res.get('resolved_code')
+        else:
+            ch = bert_code_to_choice(code, node)
         if ch is not None:
             out[yaml_node] = ch
     return out
@@ -397,6 +435,7 @@ def match_global_rules(text: str, rules: List[dict]) -> Optional[dict]:
 def run_triage(graph: ProtocolGraph,
                answers: Dict[str, str],
                age: Optional[int] = None,
+               sex: Optional[str] = None,
                transcript_text: str = '',
                symptoms: Optional[List[str]] = None) -> TriageResult:
     """入力（回答＋年齢＋通報テキスト）から最終トリアージ＋内訳を一括で出す。
@@ -425,7 +464,16 @@ def run_triage(graph: ProtocolGraph,
     common_completed = cw.stop.startswith('reached:')
 
     # 2) 全症候を辿る（回答があった症候だけ完了/遷移とみなすゲート付）
-    target = symptoms if symptoms is not None else graph.protocol_ids
+    if symptoms is not None:
+        target = symptoms
+    else:
+        # router_age: 年齢で不適用の症候（成人↔小児）を除外する（例 age<16 は adult_* を除外）
+        _routes = (graph.raw.get('chief_complaint_router') or {}).get('routes', [])
+        _disallow = set()
+        if _routes and age_logic is not None:
+            _allowed = set(age_logic.applicable_protocols(_routes, age))
+            _disallow = {r['protocol'] for r in _routes if r.get('protocol') not in _allowed}
+        target = [p for p in graph.protocol_ids if p not in _disallow]
     sym_results = []
     for pid in target:
         w = traverse_symptom(graph, pid, answers)
@@ -472,6 +520,7 @@ def predict_triage(graph: ProtocolGraph,
                    bert_pred: Optional[Dict[str, int]] = None,
                    answers: Optional[Dict[str, str]] = None,
                    age: Optional[int] = None,
+                   sex: Optional[str] = None,
                    transcript_text: str = '') -> TriageResult:
     """通報1件を判定する入口。
        ・bert_pred: {bert_node: code}（verify07モデルの出力）を渡すと NODE_MAP 経由で回答へ変換。
@@ -479,8 +528,8 @@ def predict_triage(graph: ProtocolGraph,
        両方省略時は空（＝全途切れ→VE）。"""
     ans = dict(answers) if answers else {}
     if bert_pred:
-        ans.update(build_answers_from_bert(bert_pred))
-    return run_triage(graph, ans, age=age, transcript_text=transcript_text)
+        ans.update(build_answers_from_bert(bert_pred, graph, age=age, sex=sex))
+    return run_triage(graph, ans, age=age, sex=sex, transcript_text=transcript_text)
 
 
 def predict_answers_with_model(model, tok, node_pairs: Dict[str, str],

@@ -69,7 +69,7 @@ def vector_to_triage(vector: List[int],
     g = graph or tp.load_graph()
     pred = vector_to_bertpred(vector, node_order)
     base = dict(DEFAULT_BASE_ANSWERS if base_answers is None else base_answers)
-    return tp.predict_triage(g, bert_pred=pred, answers=base, age=age, transcript_text=transcript_text)
+    return tp.predict_triage(g, bert_pred=pred, answers=base, age=age, sex=sex, transcript_text=transcript_text)
 
 
 def describe_vector(node_order: Optional[List[str]] = None) -> List[dict]:
