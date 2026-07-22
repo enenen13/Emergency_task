@@ -110,7 +110,9 @@ def load_graph(path: str = None) -> ProtocolGraph:
         pid = proto['id']
         protocol_ids.append(pid)
         ids = []
+        _fb = proto.get('fallback') or {}
         for node in proto.get('nodes', []):
+            node.setdefault('_fallback', _fb)   # 年齢ゲート非適用時の全陰性fallback参照用
             index[node['id']] = node
             ids.append(node['id'])
         protocol_nodes[pid] = ids
@@ -244,8 +246,64 @@ class Walk:
     transitions: int = 0            # 遷移数（＝どれだけ深く辿れたか）
 
 
+def _age_gate_applies(node: dict, age: Any, sex: Optional[str]) -> Optional[bool]:
+    """ノードの年齢/性別ゲートが患者に適用されるか（Bタイプ“ゲート”専用）。
+       True=適用(通常処理) / False=非適用(＝この年齢では質問しない→陰性スキップ) / None=ゲート無し・判定不能.
+       ※「N歳以上ですか？」(Aタイプ=年齢で回答を埋める質問)はゲートではないので対象外(None)。
+         これは augment_answers_with_age が担当する。"""
+    if age_logic is None:
+        return None
+    if age_logic.is_age_question_node(node) is not None:
+        return None                                       # Aタイプは除外
+    cond = node.get('age_condition')
+    if cond:
+        try:
+            return bool(age_logic.eval_age_condition(cond, age))
+        except Exception:
+            return None
+    q = node.get('question') or ''
+    # 「(65才以上の場合)…」「(女性で12歳以上の場合、男性65歳以上の場合)…」等のゲート質問に限定
+    if ('場合' in q) and (('歳以上' in q) or ('才以上' in q) or ('歳未満' in q) or ('才未満' in q)):
+        try:
+            return age_logic.eval_age_sex_gate(q, age, sex)
+        except Exception:
+            return None
+    return None
+
+
+def _negative_next(node: dict) -> Optional[str]:
+    """「いいえ(no)」を選んだ場合の遷移先（無ければノード既定next）。年齢ゲート非適用時の陰性スキップに使う。"""
+    for c in node.get('choices', []) or []:
+        if c.get('value') == 'no':
+            return c.get('next') or node.get('next')
+    return node.get('next')
+
+
+# 複数症状が完了して1つに絞る段になったとき、「不明(unknown由来のR3)」より
+# 「はい/いいえ(1,2系＝確定回答)由来」の完了を優先するか。
+#   True : 複数完了に確定由来と不明由来が混在する場合、不明由来を落として確定由来だけで判定する。
+#          （traverse は従来どおり全経路を辿る。落とすのは最終選択の段階だけ。）
+#   False: 従来動作（不明由来も同格に扱い、区分が割れれば複数完了のまま）。★戻すには False。
+PREFER_DEFINITE_OVER_UNKNOWN = True
+
+
+def _walk_from_unknown(graph: 'ProtocolGraph', walk: 'Walk', answers: Dict[str, str]) -> bool:
+    """完了Walkのトリアージが「不明(unknown)」回答由来か（choice選択でR3等を得た場合のみTrue）。
+       age_gate/triage_node 等の非choice由来は False。"""
+    if walk.stop != 'triage_choice' or not walk.path:
+        return False
+    node = graph.node(walk.path[-1]) or {}
+    a = answers.get(walk.path[-1])
+    for c in node.get('choices', []) or []:
+        if str(c.get('code')) == str(a):
+            return c.get('value') == 'unknown'
+    return False
+
+
 def traverse(graph: ProtocolGraph, start_id: str, answers: Dict[str, str],
-             complete_ids: tuple = (), max_steps: int = 400) -> Walk:
+             complete_ids: tuple = (), max_steps: int = 400,
+             age: Any = None, sex: Optional[str] = None,
+             apply_age_gate: bool = False) -> Walk:
     """start_id から answers に従って辺を辿る。**トリアージの重症度比較は一切しない。**
        ・choices ノード：answers[node] の choice を選ぶ。無ければ node['next']（無ければ conditional は
          先頭choiceのnextでスキップ）へ。
@@ -275,6 +333,20 @@ def traverse(graph: ProtocolGraph, start_id: str, answers: Dict[str, str],
             return _end_here(f'loop:{nid}')
         seen.add(nid)
         path.append(nid)
+
+        # 年齢/性別ゲート: この患者に非適用の症状質問は「陰性(いいえ)」として扱い、質問せず先へ。
+        # 行き先が無い終端(例: 65歳未満で abd_pain_quality_65)なら症状質問が尽きた
+        # ＝全陰性とみなし、protocol の fallback.if_all_symptom_questions_negative を採用する。
+        if apply_age_gate and age is not None and _age_gate_applies(node, age, sex) is False:
+            nxt = _negative_next(node)
+            if nxt:
+                nid = nxt
+                continue
+            fb = (node.get('_fallback') or {}).get('if_all_symptom_questions_negative')
+            if fb:
+                return Walk(path=path, completed=True, triage=fb,
+                            stop=f'age_gate_all_negative:{nid}', transitions=len(path))
+            return _end_here(f'age_gate_no_fallback:{nid}')
 
         # ノード自体が triage 終端
         if 'triage' in node and 'choices' not in node:
@@ -333,11 +405,14 @@ def traverse(graph: ProtocolGraph, start_id: str, answers: Dict[str, str],
 
 
 def traverse_common(graph: ProtocolGraph, answers: Dict[str, str]) -> Walk:
-    """共通フロー（導入＋共通バイタル）を辿る。route_to_symptom_inquiry / router 到達で完了。"""
+    """共通フロー（導入＋共通バイタル）を辿る。route_to_symptom_inquiry / router 到達で完了。
+       ※共通フローの年齢サブ質問(Aタイプ「N歳以上ですか」)は augment_answers_with_age が担当するため、
+         ここでは年齢ゲートによる陰性スキップ(apply_age_gate)は行わない。"""
     return traverse(graph, graph.entry_start, answers, complete_ids=COMMON_DONE_IDS)
 
 
-def traverse_symptom(graph: ProtocolGraph, protocol_id: str, answers: Dict[str, str]) -> Walk:
+def traverse_symptom(graph: ProtocolGraph, protocol_id: str, answers: Dict[str, str],
+                     age: Any = None, sex: Optional[str] = None) -> Walk:
     """症候プロトコルを入口から辿る。triage終端到達で完了。"""
     entry = PROTOCOL_ENTRY.get(protocol_id)
     if entry is None:
@@ -345,7 +420,7 @@ def traverse_symptom(graph: ProtocolGraph, protocol_id: str, answers: Dict[str, 
         if not ids:
             return Walk(path=[], broke_off=True, stop=f'no_nodes:{protocol_id}')
         entry = ids[0]
-    return traverse(graph, entry, answers)
+    return traverse(graph, entry, answers, age=age, sex=sex, apply_age_gate=True)
 
 
 # ---------------------------------------------------------------------------
@@ -413,6 +488,12 @@ def decide(common_completed: bool,
 
     # ── ケース1：共通完了 かつ ≥1症状完了 ──
     if common_completed and completed:
+        # 最終選択で「不明(unknown由来)」より「1,2系(確定回答由来)」を優先。
+        # 確定由来が1つ以上あれば、不明由来の完了は候補から落とす（traverseは変えない）。
+        if PREFER_DEFINITE_OVER_UNKNOWN:
+            definite = [s for s in completed if not s.get('from_unknown')]
+            if definite:
+                completed = definite
         names = [s['protocol'] for s in completed]
         if len(completed) == 1:
             s = completed[0]
@@ -421,11 +502,21 @@ def decide(common_completed: bool,
                                 sub2=f"共通完了かつ症状完了1つ({s['protocol']}:{s['triage']})",
                                 furthest_symptom=fs_name, furthest_transitions=fs_tr,
                                 completed_symptoms=names)
-        # 複数完了：どれが重いかの比較で1つに絞らず、事実を列挙して出す。
         listed = ', '.join(f"{s['protocol']}:{s['triage']}" for s in completed)
+        # 複数完了でも「全て同一区分(R系→VE / Y系→SE / G→LE)」ならその区分にまとめる。
+        # 例: どちらもR(R1/R2/R3)なら VE。区分が割れる時だけ複数完了として残す。
+        cats = {CAT.get(s['triage'], 'VE') for s in completed}
+        if len(cats) == 1:
+            main = next(iter(cats))
+            return TriageResult(main=main, main_name=MAIN_NAME[main],
+                                sub1=' / '.join(s['triage'] for s in completed),
+                                sub2=f'症状完了{len(completed)}つが全て同一区分{main}に集約({listed})',
+                                furthest_symptom=fs_name, furthest_transitions=fs_tr,
+                                completed_symptoms=names)
+        # 区分が割れる複数完了：1つに絞らず事実を列挙して出す。
         return TriageResult(main='複数完了', main_name='複数症状完了(要判断・比較なし)',
                             sub1=' / '.join(s['triage'] for s in completed),
-                            sub2=f'共通完了かつ症状完了{len(completed)}つ({listed}) ※単一に絞らない',
+                            sub2=f'共通完了かつ症状完了{len(completed)}つ({listed}) ※区分割れ・単一に絞らない',
                             furthest_symptom=fs_name, furthest_transitions=fs_tr,
                             completed_symptoms=names)
 
@@ -508,13 +599,14 @@ def run_triage(graph: ProtocolGraph,
         target = [p for p in graph.protocol_ids if p not in _disallow]
     sym_results = []
     for pid in target:
-        w = traverse_symptom(graph, pid, answers)
+        w = traverse_symptom(graph, pid, answers, age=age, sex=sex)
         engaged = any(n in answers for n in w.path)
         sym_results.append({'protocol': pid,
                             'completed': bool(engaged and w.triage is not None and not w.broke_off),
                             'triage': w.triage if engaged else None,
                             'transitions': w.transitions if engaged else 0,
                             'broke': bool(engaged and w.broke_off),
+                            'from_unknown': bool(engaged and _walk_from_unknown(graph, w, answers)),
                             'stop': w.stop})
 
     # 3) 合成判定（メイン/サブ）
