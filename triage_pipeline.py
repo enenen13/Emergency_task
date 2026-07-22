@@ -119,6 +119,15 @@ def load_graph(path: str = None) -> ProtocolGraph:
 # ---------------------------------------------------------------------------
 _LETTERS = 'abcdefghij'
 
+# 共通ノードの学習ラベル→yaml choice code リマップ。
+# 07_21 の common_breathing/conversation は yaml の多選択肢を意味で圧縮して学習しており
+# （label3=苦しそう / label4=不明 など）、位置対応 choices[k-1] では triage がズレる。
+# キーワード検証で確認した正しい対応へ明示的に変換する（1=a,2=b は正しいので触らない）。
+COMMON_LABEL_REMAP: Dict[str, Dict[int, str]] = {
+    'common_breathing':    {3: 'f', 4: 'g'},   # 3=呼吸が苦しそう(R2) / 4=不明(R3)
+    'common_conversation': {3: 'i'},           # 3=不明(R3)
+}
+
 
 def bert_code_to_choice(code: int, node: Optional[dict] = None) -> Optional[str]:
     """BERTの分類 code(0..N) を yaml の choice code へ。
@@ -131,6 +140,12 @@ def bert_code_to_choice(code: int, node: Optional[dict] = None) -> Optional[str]
     node 省略時のみ後方互換で 'a','b',… の位置レター変換にフォールバックする。"""
     if code is None or int(code) <= 0:
         return None
+    # 共通ノードは学習データが yaml の選択肢を意味で圧縮しているため、
+    # 位置対応(choices[k-1])では triage がズレる。yaml choice へ明示リマップする。
+    if node is not None:
+        _rm = COMMON_LABEL_REMAP.get(node.get('id'))
+        if _rm and int(code) in _rm:
+            return _rm[int(code)]
     idx = int(code) - 1
     if node is not None and 'choices' in node:
         choices = node['choices']
