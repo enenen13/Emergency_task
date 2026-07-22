@@ -762,12 +762,14 @@ protocols:
       text: はい
       triage: R2
     - code: b
+      triage: Y2
       code_label: 2
       value: 'no'
       text: いいえ
       pdf_cell_blank: true
       note: PDF原本でセル空欄。
     - code: c
+      triage: R3
       code_label: 3
       value: unknown
       text: 不明
@@ -907,12 +909,14 @@ protocols:
       text: はい
       triage: R2
     - code: b
+      triage: Y2
       code_label: 2
       value: 'no'
       text: いいえ
       pdf_cell_blank: true
       note: PDF原本では b のセル空欄。fallback で Y2。
     - code: c
+      triage: R3
       code_label: 3
       text: 不明
       affects_triage: false
@@ -1067,6 +1071,7 @@ protocols:
       text: はい
       triage: Y2
     - code: b
+      triage: Y2
       code_label: 2
       value: 'no'
       text: いいえ
@@ -1270,6 +1275,7 @@ protocols:
       text: はい
       triage: R2
     - code: b
+      triage: Y2
       code_label: 2
       value: 'no'
       text: いいえ
@@ -1702,6 +1708,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: G
       code_label: 2
       value: 'no'
       text: いいえ
@@ -1985,6 +1992,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: G
       code_label: 2
       value: 'no'
       text: いいえ
@@ -2236,6 +2244,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: G
       code_label: 2
       value: 'no'
       text: いいえ
@@ -2427,6 +2436,7 @@ protocols:
       text: 上記以上に出血している
       triage: Y1
     - code: c
+      triage: R3
       code_label: 4
       value: unknown
       text: 不明
@@ -2456,6 +2466,7 @@ protocols:
       next: hematemesis_history_info
       pdf_cell_blank: true
     - code: c
+      triage: R3
       code_label: 3
       value: unknown
       text: 不明
@@ -2496,6 +2507,7 @@ protocols:
       text: 上記以上に出血している
       triage: Y1
     - code: c
+      triage: R3
       code_label: 4
       value: unknown
       text: 不明
@@ -2525,6 +2537,7 @@ protocols:
       next: melena_history_info
       pdf_cell_blank: true
     - code: c
+      triage: R3
       code_label: 3
       value: unknown
       text: 不明
@@ -2670,6 +2683,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: Y2
       code_label: 2
       value: 'no'
       text: いいえ
@@ -2982,6 +2996,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: G
       code_label: 2
       value: 'no'
       text: いいえ
@@ -3260,6 +3275,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: G
       code_label: 2
       value: 'no'
       text: いいえ
@@ -3510,6 +3526,7 @@ protocols:
       text: はい
       triage: Y1
     - code: b
+      triage: G
       code_label: 2
       value: 'no'
       text: いいえ
