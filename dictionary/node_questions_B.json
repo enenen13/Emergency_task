@@ -2,6 +2,7 @@
  "_meta": {
   "purpose": "B(質問＋選択肢)",
   "yaml": "protocol_spreadsheet_aligned202607211237.yaml",
+  "data": "07_21",
   "n_nodes": 109
  },
  "questions": {
@@ -19,7 +20,7 @@
    "source": "yaml_code_label"
   },
   "00_common_cold_sweat": {
-   "question": "40歳以上ですか？",
+   "question": "冷や汗をかいていますか？",
    "choices": [
     "はい",
     "いいえ",
