@@ -83,7 +83,14 @@ PROTOCOL_ENTRY: Dict[str, str] = {}
 def load_graph(path: str = None) -> ProtocolGraph:
     if path is None:
         here = os.path.dirname(os.path.abspath(__file__))
-        path = os.path.join(here, 'transition_diagram', 'protocol.yaml')
+        tdir = os.path.join(here, 'transition_diagram')
+        # ★学習ラベルの由来である spreadsheet版yaml（不明などの正規回答肢を完全収録）を優先。
+        #   protocol.yaml は不明肢が欠落しており、code=不明(=k) が choices[k-1] 不在で
+        #   None(=該当なし=途切れ)に落ちてしまう（label0のみ該当なしが正）。最新の
+        #   protocol_spreadsheet_aligned*.yaml があればそれを既定にし、無ければ protocol.yaml。
+        import glob as _glob
+        _aligned = sorted(_glob.glob(os.path.join(tdir, 'protocol_spreadsheet_aligned*.yaml')))
+        path = _aligned[-1] if _aligned else os.path.join(tdir, 'protocol.yaml')
     with open(path, encoding='utf-8') as f:
         raw = yaml.safe_load(f)
 
@@ -124,6 +131,11 @@ _LETTERS = 'abcdefghij'
 # （選択肢の意味圧縮や c↔d の入れ替わり）、位置対応 choices[k-1] では triage がズレる。
 # 全07_21データのキーワード検証で確認した正しい対応へ明示変換する（はい=1/いいえ=2 等は不変）。
 COMMON_LABEL_REMAP: Dict[str, Dict[int, str]] = {
+    # overview: label選択肢は4つ(1:CPA/2:けいれん/3:主訴分類/4:不明)だが yaml choices は5つ
+    # (a,b外傷,c convulsion,chief_complaint_classification,d)で並びがズレる。位置変換だと
+    # code3→'c'(convulsion) に誤爆し、通常主訴が全て convulsion へ直行→共通バイタルを飛ばす。
+    # code_label に合わせて明示変換する（3=主訴分類→chief_complaint_classification で共通続行）。
+    'overview':             {1: 'a', 2: 'c', 3: 'chief_complaint_classification', 4: 'd'},
     'common_breathing':     {3: 'f', 4: 'g'},   # 3=呼吸が苦しそう(R2) / 4=不明(R3)
     'common_conversation':  {3: 'i'},           # 3=不明(R3)
     # 注: hematemesis_amount 等は protocol.yaml に選択肢dが無い＝yaml版ズレ（下記）。
@@ -478,7 +490,10 @@ def run_triage(graph: ProtocolGraph,
                             f'共通フロー内で確定({cw.path[-1]})',
                             reason=f'共通フローの {cw.path[-1]} で {cw.triage} が確定',
                             common_completed=False, common_stop=cw.stop)
-    common_completed = cw.stop.startswith('reached:')
+    # 共通完了 = 症候別ルーティングに到達したか。route_to_symptom_inquiry/router 到達(reached:)に加え、
+    # overview 等から症候別プロトコルへ直行する route_to_protocol / route_to も「共通は途切れず症候へ渡った」
+    # とみなす（protocol.yaml の正規ルート。これを途切れ扱いにすると症候別トリアージが全て安全側VEに潰れる）。
+    common_completed = cw.stop.startswith('reached:') or cw.stop.startswith('route_to')
 
     # 2) 全症候を辿る（回答があった症候だけ完了/遷移とみなすゲート付）
     if symptoms is not None:
