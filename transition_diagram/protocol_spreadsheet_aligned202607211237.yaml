@@ -2533,6 +2533,10 @@ protocols:
     phone_icon: ☎
     question: 消化器疾患、大動脈疾患の既往はありますか？
     metadata_only: true
+    triage: Y2
+    triage_note: 既往確認まで到達（少量出血 a／現在は出血していない d ＋ 腹痛なし b）は
+      fallback「if_no_abdominal_pain_and_underwear_blood_only → Y2」相当。
+      末端で triage 終端に到達せず途切れVE(過剰)になるのを防ぐため Y2(SE) で確定。
   fallback:
     if_any_unknown: R3
     if_no_abdominal_pain_and_underwear_blood_only: Y2
