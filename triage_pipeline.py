@@ -119,13 +119,15 @@ def load_graph(path: str = None) -> ProtocolGraph:
 # ---------------------------------------------------------------------------
 _LETTERS = 'abcdefghij'
 
-# 共通ノードの学習ラベル→yaml choice code リマップ。
-# 07_21 の common_breathing/conversation は yaml の多選択肢を意味で圧縮して学習しており
-# （label3=苦しそう / label4=不明 など）、位置対応 choices[k-1] では triage がズレる。
-# キーワード検証で確認した正しい対応へ明示的に変換する（1=a,2=b は正しいので触らない）。
+# 学習ラベル→yaml choice code リマップ（07_21データが yaml の並びと一致しないノード）。
+# 07_21 の一部ノードは yaml choices と label の順序がズレて学習されており
+# （選択肢の意味圧縮や c↔d の入れ替わり）、位置対応 choices[k-1] では triage がズレる。
+# 全07_21データのキーワード検証で確認した正しい対応へ明示変換する（はい=1/いいえ=2 等は不変）。
 COMMON_LABEL_REMAP: Dict[str, Dict[int, str]] = {
-    'common_breathing':    {3: 'f', 4: 'g'},   # 3=呼吸が苦しそう(R2) / 4=不明(R3)
-    'common_conversation': {3: 'i'},           # 3=不明(R3)
+    'common_breathing':     {3: 'f', 4: 'g'},   # 3=呼吸が苦しそう(R2) / 4=不明(R3)
+    'common_conversation':  {3: 'i'},           # 3=不明(R3)
+    # 注: hematemesis_amount 等は protocol.yaml に選択肢dが無い＝yaml版ズレ（下記）。
+    #     pipeline を spreadsheet版yamlに切替えれば {3:'d',4:'c'} で整合する。
 }
 
 

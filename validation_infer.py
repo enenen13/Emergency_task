@@ -61,10 +61,23 @@ def _uses_nodeid_columns(fieldnames) -> bool:
     return any((y in fs) and (f'{y}_pairs' in fs) for y in tp.NODE_MAP)
 
 
+def _uses_bertkey_columns(fieldnames) -> bool:
+    """出力整合形式（列名=BERTキー=NODE_ORDER と '<bert>_pairs'）かどうかを判定。"""
+    fs = set(fieldnames or [])
+    return any((b in fs) and (f'{b}_pairs' in fs) for b in set(tp.NODE_MAP.values()))
+
+
 def _iter_cols(row):
-    """(yaml_node, bert_node, bun_col, pair_col) を列挙。
-       renamed形式（列名=yaml_node_id）優先、無ければ旧COLMAP形式。"""
-    if _uses_nodeid_columns(row.keys()):
+    """(col_id, bert_node, bun_col, pair_col) を列挙。
+       形式自動判定: BERTキー列（出力整合版）→ renamed(yaml_node_id) → 旧COLMAP。"""
+    fs = row.keys()
+    if _uses_bertkey_columns(fs) and not _uses_nodeid_columns(fs):
+        # 列名がBERTキー（validation_vectors と同じ node 名）。col=node=bert_node。
+        for bert_node in sorted(set(tp.NODE_MAP.values())):
+            pair_col = f'{bert_node}_pairs'
+            if pair_col in row:
+                yield bert_node, bert_node, bert_node, pair_col
+    elif _uses_nodeid_columns(fs):
         for yaml_node, bert_node in tp.NODE_MAP.items():
             pair_col = f'{yaml_node}_pairs'
             if pair_col in row:                      # CSVにその列がある分だけ
